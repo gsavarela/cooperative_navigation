@@ -15,6 +15,7 @@ from numpy.random import choice
 
 from common import Array, Observation, Action, ActionSet, Rewards
 from common import softmax
+from common import PlayerActions
 
 
 class ActorCriticCentral(object):
@@ -53,6 +54,7 @@ class ActorCriticCentral(object):
         self.decay_count = 1
         self.epsilon_step = float(1 / explore_episodes)
         self.reset(seed=seed)
+        self.step = 0
 
     @property
     def label(self):
@@ -101,6 +103,7 @@ class ActorCriticCentral(object):
         self.mu += self.zeta * self.delta
         self.omega += self.alpha * self.delta * state
         self.theta += self.beta * self.delta * self._psi(state, cur)
+        self.step += 1
 
     def _psi(self, state: Array, action: int) -> Array:
         X = self._X(state)
@@ -108,10 +111,10 @@ class ActorCriticCentral(object):
         return (X * logP).T
 
     def _X(self, state: Array) -> Array:
-        return np.tile(state / self.tau, (self.theta.shape[1], 1))
+        return np.tile(state / self.tau, (len(self.action_set), 1))
 
     def _logP(self, state: Array, action: int) -> Array:
-        res = -np.tile(self._PI(state).T, (1, self.theta.shape[0]))
+        res = -np.tile(self._PI(state).T, (1, self.n_features))
         res[action, :] += 1
         return res
 
@@ -124,20 +127,21 @@ if __name__ == "__main__":
 
     from environment import Environment
     from plots import rewards_plot, returns_plot
-    from common import onehot
     from tqdm.auto import trange
 
     n = 1
-    env = Environment(n=n, scenario="networked_spread", seed=0)
+    seed = 0
+    env = Environment(n=n, scenario="networked_spread", seed=seed)
     agent = ActorCriticCentral(
         n_players=env.n,
         n_features=env.n_features,
         action_set=env.action_set,
         alpha=0.5,
-        beta=0.2,
-        explore_episodes=100,
+        beta=0.3,
+        explore_episodes=125,
         explore=True,
         decay=False,
+        seed=seed
     )
     first = True
     episodes = []
@@ -153,7 +157,7 @@ if __name__ == "__main__":
         first = False
         for _ in trange(100, desc="timesteps"):
             # step environment
-            next_obs, next_rewards, done, _ = env.step(onehot(actions))
+            next_obs, next_rewards = env.step(actions)
 
             next_actions = agent.act(next_obs)
 
@@ -176,7 +180,7 @@ if __name__ == "__main__":
         sleep(0.1)
 
         # step environment
-        next_obs, next_rewards, done, _ = env.step(onehot(actions))
+        next_obs, next_rewards = env.step(actions)
 
         next_actions = agent.act(next_obs)
 

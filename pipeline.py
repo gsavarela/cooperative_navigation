@@ -2,6 +2,8 @@
 """Runs (a) train (b) evaluation (c) simulation.
 
 TODO: introduce interfaces in the project as types.
+
+
 """
 from typing import List, Tuple, Union
 from time import sleep
@@ -11,7 +13,6 @@ import numpy as np
 from central import ActorCriticCentral as Agent
 from environment import Environment
 from common import Observation, Action, Rewards, Array
-from common import onehot
 from plots import train_plot, rollout_plot
 from tqdm.auto import trange
 
@@ -147,8 +148,8 @@ def train(num: int, seed: int) -> Result:
         n_features=env.n_features,
         action_set=env.action_set,
         alpha=0.5,
-        beta=0.2,
-        explore_episodes=100,
+        beta=0.3,
+        explore_episodes=125,
         explore=True,
         decay=False,
         seed=seed,
@@ -254,7 +255,7 @@ def top_k(tuples_list: RuR, k: int = 5) -> RuR:
     """
 
     def fn(x):
-        return np.sum(x[-1])
+        return np.mean(x[-1][50:])
 
     return sorted(tuples_list, key=fn, reverse=True)[:k]
 
@@ -279,7 +280,7 @@ def simulate(num: int, env: Environment, agent: Agent) -> None:
         env.render()
         sleep(0.1)
 
-        next_obs, _= env.step(actions)
+        next_obs, _ = env.step(actions)
 
         next_actions = agent.act(next_obs)
 
@@ -295,13 +296,14 @@ if __name__ == "__main__":
         results = pool.map(train_w, enumerate(SEEDS))
     train_plot(get_results(results))
 
-    results_k = top_k(results)
-
+    results_k = top_k(results, k=3)
     train_plot(get_results(results_k))
 
-    rollouts = map(rollout_w, results)
+    rollouts = [*map(rollout_w, results)]
     rollout_plot(get_results(rollouts))
-    rollouts_k = top_k(results)
-    rollout_plot(get_results(results_k))
+    rollouts_k = [
+        roll for roll in rollouts if roll[0] in set([*map(itemgetter(0), results_k)])
+    ]
+    rollout_plot(get_results(rollouts_k))
 
     simulate(*results_k[0][:3])

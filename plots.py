@@ -121,5 +121,5 @@ def rollout_plot(results: Array, n: int = 1) -> None:
     axis.fill_between(X, Y - Y_std, Y + Y_std, facecolor="C0", alpha=0.5)
     plt.suptitle("Rollouts (N=%s, M=%s)" % (n, M))
     plt.xlabel("Timesteps")
-    plt.ylabel("Average Reward Return")
+    plt.ylabel("Average Reward")
     plt.show()

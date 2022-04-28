@@ -73,15 +73,15 @@ class NetworkedSpreadScenario(BaseScenario):
     reward(player: Agent, world: World): float
         Computes the reward for player
     """
+
     @property
     def assignment(self) -> Array:
         """A mapping from 'N' players to 'N' landmarks."""
-
         return self._assignment
 
     @property
     def coefficients(self) -> Array:
-        """A preference from landmarks to be covered. (set to 1)""" 
+        """A preference from landmarks to be covered. (set to 1)"""
         return self._coefficients
 
     @property
@@ -108,23 +108,19 @@ class NetworkedSpreadScenario(BaseScenario):
         self._seed = seed
 
         world = World()
-        # set any world properties first
-        # add players
-        # world.agents = [Agent() for _ in range(n_players)]
+
         for i in range(n_players):
             agent = Agent()
             agent.name = "agent %d" % i
             agent.collide = True
             agent.silent = True
             agent.size = 0.15
+            agent.accel = None
             world.agents.append(agent)
         # Ducktape agent <--> player
         world.players = world.agents
 
         # add landmarks
-        # world.landmarks = [Landmark() for _ in range(n_players)]
-        # world.landmarks = [Landmark() for _ in range(n_players)]
-        # for i, landmark in enumerate(world.landmarks):
         for i in range(n_players):
             landmark = Landmark()
             landmark.name = "landmark %d" % i
@@ -138,7 +134,7 @@ class NetworkedSpreadScenario(BaseScenario):
         return world
 
     def reset_world(self, world: World, first: bool = False) -> None:
-        """Moves agents to initial position and sets velocity to zero.""" 
+        """Moves agents to initial position and sets velocity to zero."""
         n = len(world.players)
         # Forces initial condition to be the same.
         if first or not self.restart:
@@ -190,14 +186,16 @@ class NetworkedSpreadScenario(BaseScenario):
         return rew
 
     def observation(self, agent: Agent, world: World) -> Observation:
-        """Generates an observation for the Agent. """
+        """Generates an observation for the Agent."""
         # get positions of all entities in this player's reference frame
         # Warning assuming fully observable case
         # The landmark is not necesseraly the same assigned.
         i = world.agents.index(agent)
         m = world.landmarks[i]
 
-        res = np.concatenate([agent.state.p_pos, m.state.p_pos])
+        res = np.concatenate(
+            [agent.state.p_pos, agent.state.p_vel, m.state.p_pos - agent.state.p_pos]
+        )
         return res
 
 
