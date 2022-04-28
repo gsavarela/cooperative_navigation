@@ -21,6 +21,31 @@ from multiagent.scenario import BaseScenario
 
 
 class Scenario(BaseScenario):
+    """Simple spread scenario
+
+    Attributes:
+    ----------
+    fully_observable: bool
+    restart(): bool
+        Change initial positions on reset. (See seed).
+
+    seed(): int
+        Regulates assignments, coefficients and entities' initial positions
+
+    Methods:
+    --------
+    make_world(n_players: int = 1, restart: bool = False, seed: int = 0): World
+        Builds the world and its entities: players and landmarks.
+
+    observation(player: Agent, world: World): Observation
+        Generates an observation for the Agent.
+
+    reset_world(world: World, first: bool = False):
+        Moves agents to initial position and sets velocity to zero.
+
+    reward(player: Agent, world: World): float
+        Computes the reward for player
+    """
     @property
     def restart(self) -> bool:
         """Change initial positions on reset. (See seed)."""
@@ -30,6 +55,11 @@ class Scenario(BaseScenario):
     def seed(self) -> int:
         """Regulates assignments, coefficients and entities' initial positions"""
         return self._seed
+
+    @property
+    def fully_observable(self) -> bool:
+        """Every agent has private information."""
+        return False
 
     def make_world(
         self, n_players: int = 1, restart: bool = False, seed: int = 0
@@ -62,7 +92,7 @@ class Scenario(BaseScenario):
         return world
 
     def reset_world(self, world: World, first: bool = False) -> None:
-        """Moves agents to initial position and sets velocity to zero.""" 
+        """Moves agents to initial position and sets velocity to zero."""
         n = len(world.agents)
 
         if first or not self.restart:

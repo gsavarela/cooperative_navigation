@@ -139,7 +139,7 @@ def train(num: int, seed: int) -> Result:
             The returns from the episodes.
     """
     # Defines the environment
-    env = Environment(n=1, scenario="networked_spread", seed=seed)
+    env = Environment(n=1, scenario="networked_spread", seed=seed, central=True)
 
     # Defines the central actor critic.
     agent = Agent(
@@ -169,7 +169,7 @@ def train(num: int, seed: int) -> Result:
         rewards = []
         for _ in trange(100, desc="timesteps"):
             # step environment
-            next_obs, next_rewards, _, _ = env.step(onehot(actions))
+            next_obs, next_rewards = env.step(actions)
 
             next_actions = agent.act(next_obs)
 
@@ -210,7 +210,7 @@ def rollout(num: int, env: Environment, agent: Agent) -> Rollout:
     for _ in trange(100, desc="timesteps"):
 
         # step environment
-        next_obs, next_rewards, *_ = env.step(onehot(actions))
+        next_obs, next_rewards = env.step(actions)
 
         next_actions = agent.act(next_obs)
 
@@ -279,7 +279,7 @@ def simulate(num: int, env: Environment, agent: Agent) -> None:
         env.render()
         sleep(0.1)
 
-        next_obs, *_ = env.step(onehot(actions))
+        next_obs, _= env.step(actions)
 
         next_actions = agent.act(next_obs)
 
@@ -296,6 +296,7 @@ if __name__ == "__main__":
     train_plot(get_results(results))
 
     results_k = top_k(results)
+
     train_plot(get_results(results_k))
 
     rollouts = map(rollout_w, results)

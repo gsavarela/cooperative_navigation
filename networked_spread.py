@@ -85,6 +85,11 @@ class NetworkedSpreadScenario(BaseScenario):
         return self._coefficients
 
     @property
+    def fully_observable(self) -> bool:
+        """Agents have full access to the state"""
+        return True
+
+    @property
     def restart(self) -> bool:
         """Change initial positions on reset. (See seed)."""
         return self._restart
@@ -187,9 +192,12 @@ class NetworkedSpreadScenario(BaseScenario):
     def observation(self, agent: Agent, world: World) -> Observation:
         """Generates an observation for the Agent. """
         # get positions of all entities in this player's reference frame
-        players_pos = [p.state.p_pos for p in world.players]
-        landmarks_pos = [m.state.p_pos for m in world.landmarks]
-        res = np.hstack(players_pos + landmarks_pos)
+        # Warning assuming fully observable case
+        # The landmark is not necesseraly the same assigned.
+        i = world.agents.index(agent)
+        m = world.landmarks[i]
+
+        res = np.concatenate([agent.state.p_pos, m.state.p_pos])
         return res
 
 

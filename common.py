@@ -29,6 +29,7 @@ Action = Tuple[int]
 ActionSet = List[Action]
 ActionsOneHot = Array
 Rewards = Array
+Step = Tuple[Observation, Array]
 
 # Functions
 def softmax(x: Array) -> Array:
