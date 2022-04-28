@@ -1,0 +1,7 @@
+gym==0.10.5
+ipython==7.9.0
+matplotlib==3.0.3
+-e git+https://github.com/openai/multiagent-particle-envs.git@47e9ee38e605f8a563370b3c7e52a349eca3f6b1#egg=multiagent
+numpy==1.14.5
+pyglet==1.4.0
+tqdm==4.64.0
