@@ -4,12 +4,15 @@ from common import Array
 
 import numpy as np
 import matplotlib.pyplot as plt
+import statsmodels.api as sm # Seaborn to make fast computations.
 
 FIGURE_X = 6.0
 FIGURE_Y = 4.0
+MEAN_CURVE_COLOR = (0.89,0.282,0.192)
+SMOOTHING_CURVE_COLOR = (0.33,0.33,0.33)
 
 
-def rewards_plot(rewards: List[float], episodes: List[int]) -> None:
+def rewards_plot(rewards: List[float], episodes: List[int], suptitle: str) -> None:
     """Plots the reward for first, mid, last episode"""
 
     rewards = np.array(rewards)
@@ -37,10 +40,11 @@ def rewards_plot(rewards: List[float], episodes: List[int]) -> None:
     plt.xlabel("Time")
     plt.ylabel("Average Reward")
     plt.legend(loc=4)
+    plt.suptitle(suptitle)
     plt.show()
 
 
-def returns_plot(rewards: List[float], episodes: List[int]) -> None:
+def returns_plot(rewards: List[float], episodes: List[int], suptitle) -> None:
     """Plots the returns"""
 
     rewards = np.array(rewards)
@@ -51,16 +55,20 @@ def returns_plot(rewards: List[float], episodes: List[int]) -> None:
         Y.append(np.sum(rewards[episodes == idx]))
     Y = np.stack(Y)
 
+
     n_steps = Y.shape[0]
     X = np.linspace(1, n_steps, n_steps)
+    Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
 
     fig = plt.figure()
     fig.set_size_inches(FIGURE_X, FIGURE_Y)
 
     plt.plot(X, Y)
+    plt.plot(X, Y_smooth[:,1], c=SMOOTHING_CURVE_COLOR, label='smooth')
     plt.xlabel("Episode")
     plt.ylabel("Average Reward Return")
     plt.legend(loc=4)
+    plt.suptitle(suptitle)
     plt.show()
 
 
@@ -82,11 +90,13 @@ def train_plot(results: Array, n: int = 1) -> None:
 
     n_steps = Y.shape[0]
     X = np.linspace(1, n_steps, n_steps)
+    Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
 
     fig, axis = plt.subplots()
     fig.set_size_inches(FIGURE_X, FIGURE_Y)
 
-    axis.plot(X, Y, c="C0")
+    axis.plot(X, Y, c="C0", label='mean')
+    axis.plot(X, Y_smooth[:, 1], c=SMOOTHING_CURVE_COLOR, label='smooth')
     axis.fill_between(X, Y - Y_std, Y + Y_std, facecolor="C0", alpha=0.5)
     plt.suptitle("Train (N=%s, M=%s)" % (n, M))
     plt.xlabel("Episode")
@@ -113,11 +123,13 @@ def rollout_plot(results: Array, n: int = 1) -> None:
 
     n_steps = Y.shape[0]
     X = np.linspace(1, n_steps, n_steps)
+    Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
 
     fig, axis = plt.subplots()
     fig.set_size_inches(FIGURE_X, FIGURE_Y)
 
     axis.plot(X, Y, c="C0")
+    axis.plot(X, Y_smooth[:, 1], c=SMOOTHING_CURVE_COLOR, label='smooth')
     axis.fill_between(X, Y - Y_std, Y + Y_std, facecolor="C0", alpha=0.5)
     plt.suptitle("Rollouts (N=%s, M=%s)" % (n, M))
     plt.xlabel("Timesteps")

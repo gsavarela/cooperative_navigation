@@ -17,11 +17,14 @@ class Environment(Base):
     n_features(): int
         The number of features
 
-    action_set(n): ActionSet
+    action_set(n): common.ActionSet
         The set of joint actions for all players.
 
-    world = self.scenario.make_world(n, restart, seed)
-    action_set = action_set(n)
+    world: world
+        The world (physics) and its entities (agents and landmarks.)
+
+    action_set: common.Actions
+        The set of all actions an agent can perform.
 
     central: bool = True
         There is a central entity that observes everything.

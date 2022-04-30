@@ -159,9 +159,11 @@ class NetworkedSpreadScenario(BaseScenario):
             player.state.p_vel = np.zeros(world.dim_p)
             player.state.c = np.zeros(world.dim_c)
 
-        for i, landmark in enumerate(world.landmarks):
-            landmark.state.p_pos = np.random.uniform(-1, +1, world.dim_p)
-            landmark.state.p_vel = np.zeros(world.dim_p)
+        # Landmarks is created only once.
+        if first:
+            for i, landmark in enumerate(world.landmarks):
+                landmark.state.p_pos = np.random.uniform(-1, +1, world.dim_p)
+                landmark.state.p_vel = np.zeros(world.dim_p)
 
     def _is_collision(self, player1: Agent, player2: Agent) -> bool:
         delta_pos = player1.state.p_pos - player2.state.p_pos

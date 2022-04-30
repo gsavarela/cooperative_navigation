@@ -29,7 +29,7 @@ class ActorCriticCentral(object):
         explore_episodes: int = 100,
         explore: bool = False,
         decay: bool = False,
-        seed: int = 0
+        seed: int = 0,
     ):
 
         # Attributes
@@ -102,6 +102,7 @@ class ActorCriticCentral(object):
         self.delta = np.clip(self.delta, -1, 1)
         self.mu += self.zeta * self.delta
         self.omega += self.alpha * self.delta * state
+        self.omega = np.clip(self.omega, -1, 1)
         self.theta += self.beta * self.delta * self._psi(state, cur)
         self.step += 1
 
@@ -131,22 +132,22 @@ if __name__ == "__main__":
 
     n = 1
     seed = 0
-    env = Environment(n=n, scenario="networked_spread", seed=seed)
+    env = Environment(n=n, scenario="networked_spread", seed=seed, restart=True)
     agent = ActorCriticCentral(
         n_players=env.n,
         n_features=env.n_features,
         action_set=env.action_set,
         alpha=0.5,
         beta=0.3,
-        explore_episodes=125,
+        explore_episodes=200,
         explore=True,
         decay=False,
-        seed=seed
+        seed=seed,
     )
     first = True
     episodes = []
     rewards = []
-    for episode in trange(150, desc="episodes"):
+    for episode in trange(250, desc="episodes"):
         # execution loop
         obs = env.reset()
 
@@ -167,8 +168,8 @@ if __name__ == "__main__":
             actions = next_actions
             rewards.append(np.mean(next_rewards))
             episodes.append(episode)
-    rewards_plot(rewards, episodes)
-    returns_plot(rewards, episodes)
+    rewards_plot(rewards, episodes, "Train Rollouts (seed={0})".format(seed))
+    returns_plot(rewards, episodes, "Train Episodes (seed={0})".format(seed))
 
     # This is a validation run.
     obs = env.reset()
@@ -186,3 +187,16 @@ if __name__ == "__main__":
 
         obs = next_obs
         actions = next_actions
+
+    print("Initial state x--------------------------------------------x ")
+    print("[x_a, y_a, v_x, v_y, x_l, y_l] {0}".format(env.reset()[0].round(2)))
+    print("x----------------------------------------------------------x ")
+    print("Agents Parameters x----------------------------------------x ")
+    print("agent.mu {0:0.2f}".format(agent.mu))
+    print("agent.omega {0}".format(agent.omega.round(2)))
+    print("agent.theta {0}".format(agent.theta.round(2)))
+    print("x----------------------------------------------------------x ")
+    env.reset()[0].round(2).tofile("data/initial_state.csv", sep=",")
+    agent.mu.round(2).tofile("data/mu.csv", sep=",")
+    agent.omega.round(2).tofile("data/omega.csv", sep=",")
+    agent.theta.round(2).tofile("data/theta.csv", sep=",")
