@@ -2,12 +2,23 @@
 
     * Continuing tasks
     * V function approximation.
-    * Linear function approximation
+    * Linear function approximation.
+    * Full observability setting.
+    * Central agent that selects actions
+    for every player.
+
+TODO:
+-----
+ * Add an interface for RLAgent (type agent).
 
 References:
 -----------
 ..[1] Sutton and Barto 2018. "Introduction to Reinforcement
   Learning 2nd Edition" (pg 333).
+..[2] Sutton, R. S., McAllester, D., Singh, S., & Mansour, Y. (2000).
+  "Policy gradient methods for reinforcement learning with function
+  approximation". In Advances in neural information processing
+  systems (NIPS), Denver, CO. Cambridge: MIT Press.
 """
 
 import numpy as np
@@ -15,10 +26,62 @@ from numpy.random import choice
 
 from common import Array, Observation, Action, ActionSet, Rewards
 from common import softmax
-from common import PlayerActions
 
 
 class ActorCriticCentral(object):
+    """ActorCritic with Linear function approximation
+
+    Attributes:
+    ----------
+    label: str
+        A description for this particular agent.
+
+    task: str
+        A description for the task.
+
+    tau: float
+        The temperature parameter regulating exploration.
+        Bound to interval [1, 100]
+
+    n_players: int
+        The number of players that must cover landmarks.
+
+    n_features: int
+        The number of features for the agents.
+
+    action_set: ActionSet
+        The action space, i.e, the list of all actions
+        at the disposal of the agent.
+
+    alpha: float = 0.9,
+        The learning rate for policy evaluation.
+
+    beta: float = 0.7,
+        The learning rate for policy parametrization.
+
+    explore_episodes: int = 100,
+        The number of episodes to explore. The temperature
+        falls linearly with the number of explore_episodes.
+
+    explore: bool = False,
+        Wheter of not the agent should take exploratory actions.
+
+    decay: bool = False,
+        Uses exponential decay on epis
+        seed: int = 0,
+
+    Methods:
+    --------
+    act(state): Action
+        Select an action based on state
+
+    reset(seed): None
+        Resets seed, updates number of steps.
+
+    update(state, actions, next_reward, next_state): None
+        Learns from policy improvement and policy evalution.
+
+    """
     def __init__(
         self,
         n_players: int,
@@ -57,18 +120,22 @@ class ActorCriticCentral(object):
         self.step = 0
 
     @property
-    def label(self):
+    def label(self) -> str:
+        """A description for this particular agent."""
         return "ActorCritic ({0})".format(self.task)
 
     @property
-    def task(self):
+    def task(self) -> str:
+        """Continuing or episodic."""
         return "continuing"
 
     @property
-    def tau(self):
+    def tau(self) -> float:
+        """The temperature parameter regulating exploration."""
         return float(100 * self.epsilon if self.explore else 1.0)
 
     def reset(self, seed=None):
+        """Resets seed, updates number of steps."""
         if seed is not None:
             np.random.seed(seed)
 
@@ -79,6 +146,19 @@ class ActorCriticCentral(object):
         self.epsilon = float(max(1e-2, self.epsilon - self.epsilon_step))
 
     def act(self, state: Observation) -> Action:
+        """Select an action based on state
+
+        Parameters:
+        -----------
+        state: Observation
+            The state of the world according to the player.
+
+        Returns:
+        --------
+        actions: Actions
+            The actions for all players.
+
+        """
         pi = self._PI(state[0])[0]
         cur = choice(len(self.action_set), p=pi)
         return self.action_set[cur]
@@ -91,6 +171,25 @@ class ActorCriticCentral(object):
         next_state: Observation,
         next_actions: Action,
     ) -> None:
+        """Learns from policy improvement and policy evalution. 
+
+        Parameters:
+        -----------
+        state: Observation
+            The state of the world according to the player, at t.
+
+        actions: Action
+            The action for every player, selected at t.
+
+        next_rewards: Rewards
+            The reward earned for each player.
+
+        next_state: Observation
+            The state of the world according to the player, at t + 1.
+
+        next_actions: Action
+            The action for every player, select at t + 1.
+        """
         # Fully observable settings all agents see the samething.
         state = state[0]
         next_state = next_state[0]
@@ -101,8 +200,10 @@ class ActorCriticCentral(object):
 
         self.delta = np.clip(self.delta, -1, 1)
         self.mu += self.zeta * self.delta
+
         self.omega += self.alpha * self.delta * state
         self.omega = np.clip(self.omega, -1, 1)
+
         self.theta += self.beta * self.delta * self._psi(state, cur)
         self.step += 1
 
@@ -139,7 +240,7 @@ if __name__ == "__main__":
         action_set=env.action_set,
         alpha=0.5,
         beta=0.3,
-        explore_episodes=200,
+        explore_episodes=450,
         explore=True,
         decay=False,
         seed=seed,
@@ -147,7 +248,7 @@ if __name__ == "__main__":
     first = True
     episodes = []
     rewards = []
-    for episode in trange(250, desc="episodes"):
+    for episode in trange(450, desc="episodes"):
         # execution loop
         obs = env.reset()
 

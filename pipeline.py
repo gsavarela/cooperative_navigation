@@ -151,7 +151,7 @@ def train(num: int, seed: int) -> Result:
         action_set=env.action_set,
         alpha=0.5,
         beta=0.3,
-        explore_episodes=200,
+        explore_episodes=450,
         explore=True,
         decay=False,
         seed=seed,
@@ -160,7 +160,7 @@ def train(num: int, seed: int) -> Result:
     res = []
     traces = []
     # Starts the training
-    for _ in trange(250, desc="episodes"):
+    for _ in trange(450, desc="episodes"):
         # execution loop
         obs = env.reset()
 
