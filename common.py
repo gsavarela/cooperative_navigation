@@ -16,8 +16,8 @@ EYE = np.eye(N_ACTIONS)
 # Enumerators
 class PlayerActions(Enum):
     NONE = 0
-    LEFT = 1
-    RIGHT = 2
+    RIGHT = 1
+    LEFT = 2
     UP = 3
     DOWN = 4
 
@@ -30,6 +30,7 @@ ActionSet = List[Action]
 ActionsOneHot = Array
 Rewards = Array
 Step = Tuple[Observation, Array]
+
 
 # Functions
 def softmax(x: Array) -> Array:

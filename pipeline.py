@@ -1,20 +1,26 @@
 #!/usr/bin/env python
 """Runs (a) train (b) evaluation (c) simulation.
 
-TODO: introduce interfaces in the project as types.
-
+TODO:
+-----
+* introduce interfaces in the project as types.
 
 """
+from pathlib import Path
 from typing import List, Tuple, Union
 from time import sleep
 import numpy as np
+import pandas as pd
 
 
+import config
 from central import ActorCriticCentral as Agent
 from environment import Environment
 from common import Observation, Action, Rewards, Array
 from plots import train_plot, rollout_plot
 from tqdm.auto import trange
+from plots import save_frames_as_gif
+
 
 # Pipeline Types
 Trace = Tuple[Observation, Action, Rewards, Observation, Action]
@@ -24,40 +30,6 @@ Results = List[Result]
 Rollout = Tuple[int, Array]
 Rollouts = Tuple[Rollout]
 RuR = Union[Results, Rollouts]
-
-N_WORKERS = 6
-SEEDS = [
-    47,
-    48,
-    49,
-    50,
-    51,
-    52,
-    53,
-    54,
-    55,
-    56,
-    57,
-    58,
-    59,
-    60,
-    61,
-    62,
-    63,
-    64,
-    65,
-    66,
-    67,
-    68,
-    69,
-    70,
-    71,
-    72,
-    73,
-    74,
-    75,
-    76,
-]
 
 
 def train_w(args: Tuple[int]) -> Result:
@@ -84,7 +56,6 @@ def train_w(args: Tuple[int]) -> Result:
             The tuple (s, a, r, s', a')
         results: Array
             The returns from the episodes.
-
 
     See Also:
     ---------
@@ -262,7 +233,9 @@ def top_k(tuples_list: RuR, k: int = 5) -> RuR:
     return sorted(tuples_list, key=fn, reverse=True)[:k]
 
 
-def simulate(num: int, env: Environment, agent: Agent) -> None:
+def simulate(
+    num: int, env: Environment, agent: Agent, save_directory_path: Path = None
+) -> None:
     """Renders the experiment for 100 timesteps.
 
     Parameters:
@@ -278,9 +251,10 @@ def simulate(num: int, env: Environment, agent: Agent) -> None:
     agent.reset()
     agent.explore = False
     actions = agent.act(obs)
+    frames = []
     for _ in trange(100, desc="timesteps"):
-        env.render()
         sleep(0.1)
+        frames += env.render(mode="rgb_array")  # for saving
 
         next_obs, _ = env.step(actions)
 
@@ -289,23 +263,37 @@ def simulate(num: int, env: Environment, agent: Agent) -> None:
         obs = next_obs
         actions = next_actions
 
+    if save_directory_path is not None:
+        save_frames_as_gif(
+            frames,
+            dir_path=save_directory_path,
+            filename="simulation-pipeline-best.gif",
+        )
+
 
 if __name__ == "__main__":
     from operator import itemgetter
     from multiprocessing.pool import Pool
 
-    with Pool(N_WORKERS) as pool:
-        results = pool.map(train_w, enumerate(SEEDS))
-    train_plot(get_results(results))
+    from pathlib import Path
+
+    target_dir = Path(config.BASE_PATH) / "02"
+    with Pool(config.N_WORKERS) as pool:
+        results = pool.map(train_w, enumerate(config.PIPELINE_SEEDS))
+    train_plot(get_results(results), save_directory_path=target_dir)
 
     results_k = top_k(results, k=3)
     train_plot(get_results(results_k))
 
     rollouts = [*map(rollout_w, results)]
-    rollout_plot(get_results(rollouts))
+    rollout_plot(get_results(rollouts), save_directory_path=target_dir)
+    pd.DataFrame(
+        data=get_results(rollouts), columns=config.PIPELINE_SEEDS
+    ).describe().to_csv((target_dir / "pipeline.csv").as_posix(), sep=",")
+
     rollouts_k = [
         roll for roll in rollouts if roll[0] in set([*map(itemgetter(0), results_k)])
     ]
-    rollout_plot(get_results(rollouts_k))
+    rollout_plot(get_results(rollouts_k), save_directory_path=target_dir)
 
-    simulate(*results_k[0][:3])
+    simulate(*results_k[0][:3], save_directory_path=target_dir)
