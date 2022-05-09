@@ -112,7 +112,11 @@ def train(num: int, seed: int) -> Result:
     """
     # Defines the environment
     env = Environment(
-        n=1, scenario="networked_spread", seed=seed, central=True, restart=True
+        n=1,
+        scenario="networked_spread",
+        seed=seed,
+        central=True,
+        restart=config.RESTART,
     )
 
     # Defines the central actor critic.
@@ -122,8 +126,8 @@ def train(num: int, seed: int) -> Result:
         action_set=env.action_set,
         alpha=0.5,
         beta=0.3,
-        explore_episodes=450,
-        explore=True,
+        explore_episodes=config.EXPLORE_EPISODES,
+        explore=config.EXPLORE,
         decay=False,
         seed=seed,
     )
@@ -131,7 +135,7 @@ def train(num: int, seed: int) -> Result:
     res = []
     traces = []
     # Starts the training
-    for _ in trange(450, desc="episodes"):
+    for _ in trange(config.EPISODES, desc="episodes"):
         # execution loop
         obs = env.reset()
 
