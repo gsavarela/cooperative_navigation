@@ -21,7 +21,6 @@ References:
   systems (NIPS), Denver, CO. Cambridge: MIT Press.
 """
 from pathlib import Path
-from typing import List
 
 import numpy as np
 from numpy.random import choice
@@ -232,10 +231,7 @@ class ActorCriticCentral(object):
 
 if __name__ == "__main__":
     from time import sleep
-    from pathlib import Path
-    import common
 
-    import pandas as pd
     from environment import Environment
 
     from plots import save_frames_as_gif
@@ -263,16 +259,6 @@ if __name__ == "__main__":
             save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
         )
 
-    def plot_omegas(omegas, episodes) -> None:
-        metrics_plot(
-            omegas,
-            episodes,
-            "|omega|",
-            "Train omega (seed={0})".format(seed),
-            rollouts=False,
-            save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
-        )
-
     def plot_returns(rewards, episodes) -> None:
         returns_plot(
             rewards,
@@ -288,96 +274,6 @@ if __name__ == "__main__":
         file_path = path / csvname
         pd.DataFrame(data=data.round(2)).to_csv(file_path.as_posix(), sep=",")
 
-    def critic(
-        deltas: List[float],
-        rewards: List[float],
-        mus: List[float],
-        dxs: List[float],
-        omegas0: List[float],
-        omegas1: List[float],
-        xs: List[float],
-    ) -> None:
-        path = Path(config.BASE_PATH) / "{0:02d}".format(config.SEED)
-        # Create individual dataframes
-        deltas_df = pd.DataFrame(np.vstack(deltas), columns=["deltas"])
-        rewards_df = pd.DataFrame(np.vstack(rewards), columns=["rewards"])
-        mus_df = pd.DataFrame(np.vstack(mus), columns=["mus"])
-        dxs_df = pd.DataFrame(
-            np.vstack(dxs), columns=["dx_a", "dy_a", "dv_x", "dv_y", "dx_r", "dy_r"]
-        )
-        omegas0_df = pd.DataFrame(
-            np.vstack(omegas0), columns=["w0_1", "w0_2", "w0_3", "w0_4", "w0_5", "w0_6"]
-        )
-        omegas1_df = pd.DataFrame(
-            np.vstack(omegas1), columns=["w1_1", "w1_2", "w1_3", "w1_4", "w1_5", "w1_6"]
-        )
-        xs_df = pd.DataFrame(
-            np.vstack(xs), columns=["x_a", "y_a", "v_x", "v_y", "x_r", "y_r"]
-        )
-
-        # 1. delta dataframe
-        dataframes = [deltas_df, rewards_df, mus_df, dxs_df, omegas0_df]
-        df = pd.concat(dataframes, axis=1)
-        df.to_csv(path / "deltas-seed{0:02d}.csv".format(config.SEED))
-
-        # 2. mu dataframe
-        dataframes = [mus_df, deltas_df]
-        df = pd.concat(dataframes, axis=1)
-        df.to_csv(path / "mus-seed{0:02d}.csv".format(config.SEED))
-
-        # 3. omegas dataframe
-        dataframes = [omegas1_df, omegas0_df, deltas_df, xs_df]
-        df = pd.concat(dataframes, axis=1)
-        df.to_csv(path / "omegas-seed{0:02d}.csv".format(config.SEED))
-
-    def actor(
-        taus: List[Array],
-        pis: List[Array],
-        pis_tau: List[Array],
-    ) -> None:
-        path = Path(config.BASE_PATH) / "{0:02d}".format(config.SEED)
-        # Create individual dataframes
-        taus_df = pd.DataFrame(data=np.vstack(taus), columns=["taus"])
-        columns = [str(common.PlayerActions(act).name) for act in range(5)]
-        action_columns = ['ACTUAL_%s' % col for col in columns]
-        pis_df = pd.DataFrame(
-            data=np.vstack(pis),
-            columns=action_columns,
-        )
-        tau_columns = ['TEMP_%s' % col for col in columns]
-        pis_tau_df = pd.DataFrame(
-            data=np.vstack(pis_tau),
-            columns=tau_columns
-        )
-        dataframes = [taus_df, pis_df, pis_tau_df]
-        df = pd.concat(dataframes, axis=1)
-        df.to_csv(path / "pi-seed{0:02d}.csv".format(config.SEED))
-
-    def traces(
-        x0: List[Array],
-        actions: List[int],
-        x1: List[Array],
-        vs: List[float],
-    ) -> None:
-
-        path = Path(config.BASE_PATH) / "{0:02d}".format(config.SEED)
-        actions = [str(common.PlayerActions(act).name) for act in actions]
-
-        # individual dataframes
-        x0_df = pd.DataFrame(
-            data=np.vstack(x0), columns=["x0_1", "x0_2", "x0_3", "x0_4", "x0_5", "x0_6"]
-        )
-        actions_df = pd.DataFrame(data=actions, columns=["actions"])
-        x1_df = pd.DataFrame(
-            data=np.vstack(x1), columns=["x1_1", "x1_2", "x1_3", "x1_4", "x1_5", "x1_6"]
-        )
-
-        vs_df = pd.DataFrame(data=np.vstack(vs), columns=["v(x)"])
-
-        # delta dataframe
-        dataframes = [x0_df, actions_df, x1_df, vs_df]
-        df = pd.concat(dataframes, axis=1)
-        df.to_csv(path / "traces-seed{0:02d}.csv".format(config.SEED))
 
     n = 1
     seed = config.SEED
@@ -397,18 +293,6 @@ if __name__ == "__main__":
     episodes = []
     rewards = []
     mus = []
-    omegas0 = []
-    omegas1 = []
-    thetas = []
-    dxs = []
-    deltas = []
-    taus = []
-    xs = []
-    acts = []
-    xs1 = []
-    vs = []
-    pis = []   
-    pis_tau = []
     for episode in trange(config.EXPLORE_EPISODES, desc="episodes"):
         # execution loop
         obs = env.reset()
@@ -423,16 +307,7 @@ if __name__ == "__main__":
             # step environment
             next_obs, next_rewards = env.step(actions)
 
-            dxs.append((next_obs[0] - obs[0]).copy())
-            xs.append(obs[0].copy())
-            mus.append(agent.mu)
-            omegas0.append(agent.omega.copy())
-            acts.append(actions[0])
-            vs.append(obs[0] @ agent.omega)
             # actor parameters.
-            pis.append(agent._pi(obs[0]))
-            pis_tau.append(agent._PI(obs[0]))
-            taus.append(agent.tau)
 
             next_actions = agent.act(next_obs)
 
@@ -443,14 +318,10 @@ if __name__ == "__main__":
 
             rewards.append(np.mean(next_rewards))
             episodes.append(episode)
-            omegas1.append(agent.omega.copy())
-            thetas.append(agent.theta.flatten())
-            deltas.append(agent.delta)
-            xs1.append(obs[0].copy())
+            mus.append(agent.mu)
 
     plot_rewards(rewards, episodes)
     plot_mus(mus, episodes)
-    plot_omegas([norm(omg) for omg in omegas1], episodes)
     # This is a validation run.
     obs = env.reset()
     agent.reset()
@@ -469,11 +340,6 @@ if __name__ == "__main__":
 
         obs = next_obs
         actions = next_actions
-
-    critic(deltas, rewards, mus, dxs, omegas0, omegas1, xs)
-    actor(taus, pis, pis_tau)
-    traces(xs, acts, xs1, vs)
-    save(np.vstack(thetas), "theta_seed{0:02d}".format(config.SEED))
     save_frames_as_gif(
         frames,
         dir_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
