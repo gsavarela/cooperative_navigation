@@ -118,9 +118,11 @@ class ActorCriticCentral(object):
         self.decay = decay
         self.epsilon = 1.0
         self.decay_count = 1
-        self.epsilon_step = float(1 / (config.TAU * explore_episodes))
-        self.reset(seed=seed)
+        self.epsilon_step = float((100 - config.TAU) / explore_episodes)
+
         self.step = 0
+        self.episodes = 0
+        self.reset(seed=seed)
 
     @property
     def label(self) -> str:
@@ -135,7 +137,10 @@ class ActorCriticCentral(object):
     @property
     def tau(self) -> float:
         """The temperature parameter regulating exploration."""
-        return float(100 * self.epsilon if self.explore else 1.0)
+        if self.explore:
+            return max(100 - (self.episodes - 1) * self.epsilon_step, config.TAU)
+        else:
+            return config.TAU
 
     def reset(self, seed=None):
         """Resets seed, updates number of steps."""
@@ -146,7 +151,7 @@ class ActorCriticCentral(object):
             self.decay_count += 1
             self.alpha = np.power(self.decay_count, -0.85)
             self.beta = np.power(self.decay_count, -0.65)
-        self.epsilon = float(max(config.TAU * 1e-2, self.epsilon - self.epsilon_step))
+        self.episodes += 1
 
     def act(self, state: Observation) -> Action:
         """Select an action based on state
@@ -231,13 +236,13 @@ class ActorCriticCentral(object):
 
 if __name__ == "__main__":
     from time import sleep
-
+    from pathlib import Path
     from environment import Environment
+    import pandas as pd
 
     from plots import save_frames_as_gif
     from plots import metrics_plot, returns_plot
     from tqdm.auto import trange
-    from numpy.linalg import norm
 
     # Some helpful functions
     def plot_rewards(rewards, episodes) -> None:
@@ -263,7 +268,6 @@ if __name__ == "__main__":
         returns_plot(
             rewards,
             episodes,
-            "Average Rewards",
             "Train Returns (seed={0})".format(seed),
             save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
         )
@@ -293,7 +297,7 @@ if __name__ == "__main__":
     episodes = []
     rewards = []
     mus = []
-    for episode in trange(config.EXPLORE_EPISODES, desc="episodes"):
+    for episode in trange(config.EPISODES, desc="episodes"):
         # execution loop
         obs = env.reset()
 
@@ -308,18 +312,19 @@ if __name__ == "__main__":
             next_obs, next_rewards = env.step(actions)
 
             # actor parameters.
-
             next_actions = agent.act(next_obs)
 
             agent.update(obs, actions, next_rewards, next_obs, next_actions)
 
             obs = next_obs
             actions = next_actions
+            print(episode, agent.tau)
 
             rewards.append(np.mean(next_rewards))
             episodes.append(episode)
             mus.append(agent.mu)
 
+    plot_returns(rewards, episodes)
     plot_rewards(rewards, episodes)
     plot_mus(mus, episodes)
     # This is a validation run.
@@ -340,6 +345,7 @@ if __name__ == "__main__":
 
         obs = next_obs
         actions = next_actions
+
     save_frames_as_gif(
         frames,
         dir_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
