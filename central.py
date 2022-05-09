@@ -361,7 +361,7 @@ if __name__ == "__main__":
 
     n = 1
     seed = config.SEED
-    env = Environment(n=n, scenario="networked_spread", seed=seed, restart=True)
+    env = Environment(n=n, scenario="networked_spread", seed=seed, restart=config.RESTART)
     agent = ActorCriticCentral(
         n_players=env.n,
         n_features=env.n_features,

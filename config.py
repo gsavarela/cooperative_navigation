@@ -4,9 +4,10 @@ BETA = 0.3  # BETA:
 TAU = 1.0   # Final TAU. ONLY active is EXPLORE=True
 EXPLORE_EPISODES = 450
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
+RESTART = False
 
 SEED = 1
-BASE_PATH = 'data/05_no_clip/00_tau01'
+BASE_PATH = 'data/06_no_clip_no_restart/00_tau01'
 
 N_WORKERS = 6
 
@@ -42,6 +43,4 @@ PIPELINE_SEEDS = [
     75,
     76
 ]
-
-
 
