@@ -172,7 +172,9 @@ def metrics_plot(
     else:
         plt.plot(X, Y, label=ylabel)
         Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
-        plt.plot(X, Y_smooth[:, -1], label="smooth")
+        plt.plot(*np.hsplit(Y_smooth, indices_or_sections=2), c=SMOOTHING_CURVE_COLOR,label="smooth")
+
+
     plt.xlabel("Time")
     plt.ylabel(ylabel)
     plt.legend(loc=4)
@@ -201,9 +203,6 @@ def returns_plot(
     rewards = np.array(rewards)
     episodes = np.array(episodes)
 
-    # fig = plt.figure()
-    # fig.set_size_inches(FIGURE_X, FIGURE_Y)
-
     Y = []
     for idx in sorted(set(episodes)):
         Y.append(np.sum(rewards[episodes == idx]))
@@ -214,7 +213,7 @@ def returns_plot(
     Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
 
     plt.plot(X, Y)
-    plt.plot(X, Y_smooth[:, 1], c=SMOOTHING_CURVE_COLOR, label="smooth")
+    plt.plot(*np.hsplit(Y_smooth, indices_or_sections=2), label="smooth")
     plt.xlabel("Episode")
     plt.ylabel("Average Reward Return")
     plt.legend(loc=4)
@@ -241,10 +240,11 @@ def train_plot(results: Array, n: int = 1, save_directory_path: Path = None) -> 
 
     n_steps = Y.shape[0]
     X = np.linspace(1, n_steps, n_steps)
+
     Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
 
     plt.plot(X, Y, c="C0", label="mean")
-    plt.plot(X, Y_smooth[:, 1], c=SMOOTHING_CURVE_COLOR, label="smooth")
+    plt.plot(*np.hsplit(Y_smooth, indices_or_sections=2), c=SMOOTHING_CURVE_COLOR,label="smooth")
     plt.fill_between(X, Y - Y_std, Y + Y_std, facecolor="C0", alpha=0.5)
     plt.suptitle("Train (N=%s, M=%s)" % (n, M))
     plt.xlabel("Episode")
@@ -275,7 +275,7 @@ def rollout_plot(results: Array, n: int = 1, save_directory_path: Path = None) -
     Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
 
     plt.plot(X, Y, c="C0")
-    plt.plot(X, Y_smooth[:, 1], c=SMOOTHING_CURVE_COLOR, label="smooth")
+    plt.plot(*np.hsplit(Y_smooth, indices_or_sections=2), c=SMOOTHING_CURVE_COLOR,label="smooth")
     plt.fill_between(X, Y - Y_std, Y + Y_std, facecolor="C0", alpha=0.5)
     plt.suptitle("Rollouts (N=%s, M=%s)" % (n, M))
     plt.xlabel("Timesteps")
