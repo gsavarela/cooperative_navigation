@@ -226,6 +226,9 @@ class ActorCriticCentral(object):
     def _PI(self, state: Array) -> Array:
         return softmax(self.theta.T @ state / self.tau)[None, :]
 
+    def _pi(self, state: Array) -> Array:
+        return softmax(self.theta.T @ state)[None, :]
+
 
 if __name__ == "__main__":
     from time import sleep
@@ -309,7 +312,7 @@ if __name__ == "__main__":
             np.vstack(omegas1), columns=["w1_1", "w1_2", "w1_3", "w1_4", "w1_5", "w1_6"]
         )
         xs_df = pd.DataFrame(
-            np.vstack(xs), columns=["x_a", "y_a", "v_x", "d_y", "x_r", "y_r"]
+            np.vstack(xs), columns=["x_a", "y_a", "v_x", "v_y", "x_r", "y_r"]
         )
 
         # 1. delta dataframe
@@ -327,12 +330,34 @@ if __name__ == "__main__":
         df = pd.concat(dataframes, axis=1)
         df.to_csv(path / "omegas-seed{0:02d}.csv".format(config.SEED))
 
+    def actor(
+        taus: List[Array],
+        pis: List[Array],
+        pis_tau: List[Array],
+    ) -> None:
+        path = Path(config.BASE_PATH) / "{0:02d}".format(config.SEED)
+        # Create individual dataframes
+        taus_df = pd.DataFrame(data=np.vstack(taus), columns=["taus"])
+        columns = [str(common.PlayerActions(act).name) for act in range(5)]
+        action_columns = ['ACTUAL_%s' % col for col in columns]
+        pis_df = pd.DataFrame(
+            data=np.vstack(pis),
+            columns=action_columns,
+        )
+        tau_columns = ['TEMP_%s' % col for col in columns]
+        pis_tau_df = pd.DataFrame(
+            data=np.vstack(pis_tau),
+            columns=tau_columns
+        )
+        dataframes = [taus_df, pis_df, pis_tau_df]
+        df = pd.concat(dataframes, axis=1)
+        df.to_csv(path / "pi-seed{0:02d}.csv".format(config.SEED))
+
     def traces(
         x0: List[Array],
         actions: List[int],
         x1: List[Array],
         vs: List[float],
-        pis: List[Array],
     ) -> None:
 
         path = Path(config.BASE_PATH) / "{0:02d}".format(config.SEED)
@@ -349,13 +374,8 @@ if __name__ == "__main__":
 
         vs_df = pd.DataFrame(data=np.vstack(vs), columns=["v(x)"])
 
-        pis_df = pd.DataFrame(
-            data=np.vstack(pis),
-            columns=[str(common.PlayerActions(act).name) for act in range(5)],
-        )
-
         # delta dataframe
-        dataframes = [x0_df, actions_df, x1_df, vs_df, pis_df]
+        dataframes = [x0_df, actions_df, x1_df, vs_df]
         df = pd.concat(dataframes, axis=1)
         df.to_csv(path / "traces-seed{0:02d}.csv".format(config.SEED))
 
@@ -382,11 +402,13 @@ if __name__ == "__main__":
     thetas = []
     dxs = []
     deltas = []
+    taus = []
     xs = []
     acts = []
     xs1 = []
     vs = []
-    pis = []
+    pis = []   
+    pis_tau = []
     for episode in trange(config.EXPLORE_EPISODES, desc="episodes"):
         # execution loop
         obs = env.reset()
@@ -407,7 +429,10 @@ if __name__ == "__main__":
             omegas0.append(agent.omega.copy())
             acts.append(actions[0])
             vs.append(obs[0] @ agent.omega)
-            pis.append(agent._PI(obs[0]))
+            # actor parameters.
+            pis.append(agent._pi(obs[0]))
+            pis_tau.append(agent._PI(obs[0]))
+            taus.append(agent.tau)
 
             next_actions = agent.act(next_obs)
 
@@ -446,7 +471,8 @@ if __name__ == "__main__":
         actions = next_actions
 
     critic(deltas, rewards, mus, dxs, omegas0, omegas1, xs)
-    traces(xs, acts, xs1, vs, pis)
+    actor(taus, pis, pis_tau)
+    traces(xs, acts, xs1, vs)
     save(np.vstack(thetas), "theta_seed{0:02d}".format(config.SEED))
     save_frames_as_gif(
         frames,
