@@ -191,13 +191,9 @@ class NetworkedSpreadScenario(BaseScenario):
         """Generates an observation for the Agent."""
         # get positions of all entities in this player's reference frame
         # Warning assuming fully observable case
-        # The landmark is not necesseraly the same assigned.
-        i = world.agents.index(agent)
-        m = world.landmarks[i]
+        rel_pos = [(lmrk.state.p_pos - agent.state.p_pos) for lmrk in world.landmarks]
 
-        res = np.concatenate(
-            [agent.state.p_pos, agent.state.p_vel, m.state.p_pos - agent.state.p_pos]
-        )
+        res = np.concatenate([agent.state.p_pos, agent.state.p_vel] + rel_pos)
         return res
 
 

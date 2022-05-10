@@ -1,15 +1,17 @@
 """Configuration"""
 ALPHA = 0.5  # ALPHA:
 BETA = 0.3  # BETA:
-TAU = 1.0   # Final TAU. ONLY active is EXPLORE=True
-EXPLORE_EPISODES = 450
+TAU = 10.0   # Final TAU
+EXPLORE_EPISODES = 975
+EPISODES = 1000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
-RESTART = False
+RESTART = True
 
 SEED = 1
-BASE_PATH = 'data/06_no_clip_no_restart/00_tau01'
+BASE_PATH = 'data/09_duo/02_tau10'
 
 N_WORKERS = 6
+N_AGENTS = 2
 
 PIPELINE_SEEDS = [
     47,

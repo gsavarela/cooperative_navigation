@@ -112,7 +112,7 @@ def train(num: int, seed: int) -> Result:
     """
     # Defines the environment
     env = Environment(
-        n=1,
+        n=config.N_AGENTS,
         scenario="networked_spread",
         seed=seed,
         central=True,

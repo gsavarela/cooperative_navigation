@@ -167,8 +167,8 @@ class ActorCriticCentral(object):
             The actions for all players.
 
         """
-        pi = self._PI(state[0])[0]
-        cur = choice(len(self.action_set), p=pi)
+        pi = self._PI(np.hstack(state))
+        cur = choice(len(self.action_set), p=pi.flatten())
         return self.action_set[cur]
 
     def update(
@@ -199,17 +199,17 @@ class ActorCriticCentral(object):
             The action for every player, select at t + 1.
         """
         # Fully observable settings all agents see the samething.
-        state = state[0]
-        next_state = next_state[0]
+        state = np.hstack(state)
+        next_state = np.hstack(next_state)
+
         # Beware for two agents.
         cur = self.action_set.index(actions)
-
         self.delta = np.mean(next_rewards) - self.mu + (next_state - state) @ self.omega
-        # self.delta = np.clip(self.delta, -1, 1)
+        self.delta = np.clip(self.delta, -1, 1)
 
         self.mu += self.zeta * self.delta
         self.omega += self.alpha * self.delta * state
-        # self.omega = np.clip(self.omega, -1, 1)
+        self.omega = np.clip(self.omega, -1, 1)
 
         self.theta += self.beta * self.delta * self._psi(state, cur)
         self.step += 1
@@ -278,12 +278,16 @@ if __name__ == "__main__":
         file_path = path / csvname
         pd.DataFrame(data=data.round(2)).to_csv(file_path.as_posix(), sep=",")
 
-
-    n = 1
     seed = config.SEED
-    env = Environment(n=n, scenario="networked_spread", seed=seed, restart=config.RESTART)
+    env = Environment(
+        n=config.N_AGENTS,
+        scenario="networked_spread",
+        seed=seed,
+        central=True,
+        restart=config.RESTART,
+    )
     agent = ActorCriticCentral(
-        n_players=env.n,
+        n_players=config.N_AGENTS,
         n_features=env.n_features,
         action_set=env.action_set,
         alpha=config.ALPHA,
@@ -318,7 +322,6 @@ if __name__ == "__main__":
 
             obs = next_obs
             actions = next_actions
-            print(episode, agent.tau)
 
             rewards.append(np.mean(next_rewards))
             episodes.append(episode)
