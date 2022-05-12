@@ -18,7 +18,14 @@ SMOOTHING_CURVE_COLOR = (0.33, 0.33, 0.33)
 SEED_PATTERN = r"seed=(.*?)\)"
 M_PATTERN = r"M=(.*?)\,"
 
-def save_frames_as_gif(frames: List[Array], dir_path: Path = None, filename: str = 'simulation.gif') -> None:
+
+def save_frames_as_gif(
+    frames: List[Array],
+    dir_path: Path = None,
+    filename: str = "simulation.gif",
+    interval: int = 200,
+    fps: int = 10,
+) -> None:
     """Saves a list of frames into gif format.
 
     * Ensure you have imagemagick installed with
@@ -38,19 +45,21 @@ def save_frames_as_gif(frames: List[Array], dir_path: Path = None, filename: str
     """
 
     if dir_path is None:
-        dir_path = Path('data/')
+        dir_path = Path("data/")
 
     # Mess with this to change frame size
     plt.figure(figsize=(frames[0].shape[1] / 72.0, frames[0].shape[0] / 72.0), dpi=72)
 
     patch = plt.imshow(frames[0])
-    plt.axis('off')
+    plt.axis("off")
 
     def animate(i):
         patch.set_data(frames[i])
 
-    anim = animation.FuncAnimation(plt.gcf(), animate, frames = len(frames), interval=50)
-    anim.save((dir_path / filename).as_posix(), writer='imagemagick', fps=60)
+    anim = animation.FuncAnimation(
+        plt.gcf(), animate, frames=len(frames), interval=interval
+    )
+    anim.save((dir_path / filename).as_posix(), writer="imagemagick", fps=fps)
 
 
 def _savefig(suptitle: str, save_directory_path: Path = None) -> None:
@@ -104,10 +113,10 @@ def _to_filename(suptitle: str) -> str:
 
     # Tries to search for a seed pattern and than
     # a M_PATTERN
-    gname = 'seed'
+    gname = "seed"
     match = re.search(SEED_PATTERN, suptitle)
     if match is None:
-        gname = 'pipeline'
+        gname = "pipeline"
         match = re.search(M_PATTERN, suptitle)
         if match is None:
             return _snakefy(suptitle)
@@ -172,8 +181,11 @@ def metrics_plot(
     else:
         plt.plot(X, Y, label=ylabel)
         Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
-        plt.plot(*np.hsplit(Y_smooth, indices_or_sections=2), c=SMOOTHING_CURVE_COLOR,label="smooth")
-
+        plt.plot(
+            *np.hsplit(Y_smooth, indices_or_sections=2),
+            c=SMOOTHING_CURVE_COLOR,
+            label="smooth"
+        )
 
     plt.xlabel("Time")
     plt.ylabel(ylabel)
@@ -184,7 +196,10 @@ def metrics_plot(
 
 
 def returns_plot(
-    rewards: List[float], episodes: List[int], suptitle, save_directory_path: Path = None
+    rewards: List[float],
+    episodes: List[int],
+    suptitle,
+    save_directory_path: Path = None,
 ) -> None:
     """Plots the `reward`, `|omega|` or any other metric for diagnostics.
 
@@ -244,7 +259,11 @@ def train_plot(results: Array, n: int = 1, save_directory_path: Path = None) -> 
     Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
 
     plt.plot(X, Y, c="C0", label="mean")
-    plt.plot(*np.hsplit(Y_smooth, indices_or_sections=2), c=SMOOTHING_CURVE_COLOR,label="smooth")
+    plt.plot(
+        *np.hsplit(Y_smooth, indices_or_sections=2),
+        c=SMOOTHING_CURVE_COLOR,
+        label="smooth"
+    )
     plt.fill_between(X, Y - Y_std, Y + Y_std, facecolor="C0", alpha=0.5)
     plt.suptitle("Train (N=%s, M=%s)" % (n, M))
     plt.xlabel("Episode")
@@ -275,7 +294,11 @@ def rollout_plot(results: Array, n: int = 1, save_directory_path: Path = None) -
     Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
 
     plt.plot(X, Y, c="C0")
-    plt.plot(*np.hsplit(Y_smooth, indices_or_sections=2), c=SMOOTHING_CURVE_COLOR,label="smooth")
+    plt.plot(
+        *np.hsplit(Y_smooth, indices_or_sections=2),
+        c=SMOOTHING_CURVE_COLOR,
+        label="smooth"
+    )
     plt.fill_between(X, Y - Y_std, Y + Y_std, facecolor="C0", alpha=0.5)
     plt.suptitle("Rollouts (N=%s, M=%s)" % (n, M))
     plt.xlabel("Timesteps")
@@ -283,15 +306,16 @@ def rollout_plot(results: Array, n: int = 1, save_directory_path: Path = None) -
     _savefig("Train Rollout (M=%s)" % M, save_directory_path)
     plt.show()
 
-if __name__ == '__main__':
-    #Make gym env
-    env = gym.make('CartPole-v1')
 
-    #Run the env
+if __name__ == "__main__":
+    # Make gym env
+    env = gym.make("CartPole-v1")
+
+    # Run the env
     observation = env.reset()
     frames = []
     for t in range(1000):
-        #Render to frames buffer
+        # Render to frames buffer
         frames.append(env.render(mode="rgb_array"))
         action = env.action_space.sample()
         _, _, done, _ = env.step(action)

@@ -53,7 +53,6 @@ class Environment(Base):
         self,
         n: int = 1,
         scenario: str = "simple_spread",
-        restart: bool = False,
         seed: int = 0,
         central: bool = True,
     ):
@@ -64,7 +63,7 @@ class Environment(Base):
         else:
             self.scenario = ns.NetworkedSpreadScenario()
 
-        self.world = self.scenario.make_world(n, restart, seed)
+        self.world = self.scenario.make_world(n, seed)
         self.action_set = action_set(n)
         self.central = central
 

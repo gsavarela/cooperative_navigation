@@ -237,12 +237,14 @@ class ActorCriticCentral(object):
 if __name__ == "__main__":
     from time import sleep
     from pathlib import Path
-    from environment import Environment
-    import pandas as pd
+    import shutil
 
+    import pandas as pd
+    from tqdm.auto import trange
+
+    from environment import Environment
     from plots import save_frames_as_gif
     from plots import metrics_plot, returns_plot
-    from tqdm.auto import trange
 
     # Some helpful functions
     def plot_rewards(rewards, episodes) -> None:
@@ -284,7 +286,6 @@ if __name__ == "__main__":
         scenario="networked_spread",
         seed=seed,
         central=True,
-        restart=config.RESTART,
     )
     agent = ActorCriticCentral(
         n_players=config.N_AGENTS,
@@ -304,7 +305,6 @@ if __name__ == "__main__":
     for episode in trange(config.EPISODES, desc="episodes"):
         # execution loop
         obs = env.reset()
-
         if not first:
             agent.reset()
         actions = agent.act(obs)
@@ -353,4 +353,9 @@ if __name__ == "__main__":
         frames,
         dir_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
         filename="simulation-seed{0:02d}.gif".format(seed),
+        interval=100,
+        fps=10
+    )
+    shutil.copy(
+        "config.py", (Path(config.BASE_PATH) / "{0:02d}".format(config.SEED)).as_posix()
     )

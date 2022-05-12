@@ -5,10 +5,9 @@ TAU = 10.0   # Final TAU
 EXPLORE_EPISODES = 975
 EPISODES = 1000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
-RESTART = True
 
-SEED = 1
-BASE_PATH = 'data/09_duo/02_tau10'
+SEED = 0
+BASE_PATH = 'data/11_switching_duo_landmarks/03_tau10'
 
 N_WORKERS = 6
 N_AGENTS = 2

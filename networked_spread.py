@@ -90,21 +90,13 @@ class NetworkedSpreadScenario(BaseScenario):
         return True
 
     @property
-    def restart(self) -> bool:
-        """Change initial positions on reset. (See seed)."""
-        return self._restart
-
-    @property
     def seed(self) -> int:
         """Regulates assignments, coefficients and entities' initial positions"""
         return self._seed
 
-    def make_world(
-        self, n_players: int = 1, restart: bool = False, seed: int = 0
-    ) -> World:
+    def make_world(self, n_players: int = 1, seed: int = 0) -> World:
         """Builds the world and its entities: players and landmarks."""
         # persist decision on restart
-        self._restart = restart
         self._seed = seed
 
         world = World()
@@ -129,18 +121,17 @@ class NetworkedSpreadScenario(BaseScenario):
             world.landmarks.append(landmark)
 
         # make initial conditions
-        self.reset_world(world, first=True)
+        np.random.seed(self.seed)
+        self.reset_world(world)
 
         return world
 
-    def reset_world(self, world: World, first: bool = False) -> None:
+    def reset_world(self, world: World) -> None:
         """Moves agents to initial position and sets velocity to zero."""
         n = len(world.players)
-        # Forces initial condition to be the same.
-        if first or not self.restart:
-            np.random.seed(self.seed)
-            self._assignment = np.random.choice(n, size=n, replace=False)
-            self._coefficients = np.ones(n)
+
+        self._assignment = np.random.choice(n, size=n, replace=False)
+        self._coefficients = np.ones(n)
 
         # random properties for players
         for i, player in enumerate(world.players):
@@ -159,11 +150,10 @@ class NetworkedSpreadScenario(BaseScenario):
             player.state.p_vel = np.zeros(world.dim_p)
             player.state.c = np.zeros(world.dim_c)
 
-        # Landmarks is created only once.
-        if first:
-            for i, landmark in enumerate(world.landmarks):
-                landmark.state.p_pos = np.random.uniform(-1, +1, world.dim_p)
-                landmark.state.p_vel = np.zeros(world.dim_p)
+        # Set the landmarks randomly
+        for i, landmark in enumerate(world.landmarks):
+            landmark.state.p_pos = np.random.uniform(-1, +1, world.dim_p)
+            landmark.state.p_vel = np.zeros(world.dim_p)
 
     def _is_collision(self, player1: Agent, player2: Agent) -> bool:
         delta_pos = player1.state.p_pos - player2.state.p_pos
@@ -191,9 +181,10 @@ class NetworkedSpreadScenario(BaseScenario):
         """Generates an observation for the Agent."""
         # get positions of all entities in this player's reference frame
         # Warning assuming fully observable case
-        rel_pos = [(lmrk.state.p_pos - agent.state.p_pos) for lmrk in world.landmarks]
-
-        res = np.concatenate([agent.state.p_pos, agent.state.p_vel] + rel_pos)
+        landmark = world.landmarks[world.agents.index(agent)]
+        res = np.concatenate(
+            [agent.state.p_pos, agent.state.p_vel, landmark.state.p_pos]
+        )
         return res
 
 
@@ -204,6 +195,7 @@ if __name__ == "__main__":
     from common import onehot, N_ACTIONS, action_set
 
     action_space = action_set(1)
+
     # Define scenario
     scenario = NetworkedSpreadScenario()
 

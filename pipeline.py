@@ -116,7 +116,6 @@ def train(num: int, seed: int) -> Result:
         scenario="networked_spread",
         seed=seed,
         central=True,
-        restart=config.RESTART,
     )
 
     # Defines the central actor critic.
@@ -278,8 +277,8 @@ def simulate(
 if __name__ == "__main__":
     from operator import itemgetter
     from multiprocessing.pool import Pool
-
     from pathlib import Path
+    import shutil
 
     target_dir = Path(config.BASE_PATH) / "02"
     with Pool(config.N_WORKERS) as pool:
@@ -301,3 +300,5 @@ if __name__ == "__main__":
     rollout_plot(get_results(rollouts_k), save_directory_path=target_dir)
 
     simulate(*results_k[0][:3], save_directory_path=target_dir)
+
+    shutil.copy('config.py', target_dir.as_posix())
