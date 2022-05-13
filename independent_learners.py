@@ -3,8 +3,8 @@
     * Continuing tasks
     * V function approximation.
     * Linear function approximation.
-    * Partial observability setting.
-    * Fully decentralized setting.
+    * Fully observability setting.
+    * Individual rewards.
 
 TODO:
 -----
@@ -101,13 +101,14 @@ class ActorCriticIL(object):
         # Attributes
         self.n_players = n_players
         self.action_set = action_set
+        self.n_actions = int(np.power(len(action_set), 1 / n_players))
         self.n_features = n_features
 
         # Parameters
         # The feature are state-value function features, i.e,
         # the generalize w.r.t the actions.
         self.omega = np.zeros((self.n_players, self.n_features))
-        self.theta = np.zeros((self.n_players, self.n_features, len(self.action_set)))
+        self.theta = np.zeros((self.n_players, self.n_features, self.n_actions))
         self.zeta = 0.1
         self.mu = np.zeros(self.n_players)
 
@@ -169,7 +170,7 @@ class ActorCriticIL(object):
         """
         ret = []
         for n in range(self.n_players):
-            pi = self._PI(state[n].flatten(), n)
+            pi = self._PI(np.hstack(state), n)
             ret.append(choice(5, p=pi.flatten()))
         return tuple(ret)
 
@@ -200,31 +201,33 @@ class ActorCriticIL(object):
         next_actions: Action
             The action for every player, select at t + 1.
         """
+        _s0 = np.hstack(state)
+        _s1 = np.hstack(next_state)
         for n in range(self.n_players):
             # Beware for two agents.
             delta = (
                 next_rewards[n]
                 - self.mu[n]
-                + (next_state[n] - state[n]) @ self.omega[n]
+                + (_s1 - _s0) @ self.omega[n]
             )
             delta = np.clip(delta, -1, 1)
-            self.omega[n] += self.alpha * delta * state[n].flatten()
+            self.omega[n] += self.alpha * delta * _s0
             self.omega[n] = np.clip(self.omega[n], -1, 1)
 
             self.theta[n] += (
-                self.beta * delta * self._psi(state[n].flatten(), actions[n], n)
+                self.beta * delta * self._psi(_s0, actions[n], n)
             )
 
             self.mu[n] += self.zeta * delta
             self.step += 1
 
     def _psi(self, state: Array, action: int, n: int) -> Array:
-        X = self._X(state)
-        logP = self._logP(state, action, n)
-        return (X * logP).T
+        _X = self._X(state)
+        _logP = self._logP(state, action, n)
+        return (_X * _logP).T
 
     def _X(self, state: Array) -> Array:
-        return np.tile(state / self.tau, (len(self.action_set), 1))
+        return np.tile(state / self.tau, (self.n_actions, 1))
 
     def _logP(self, state: Array, action: int, n: int) -> Array:
         res = -np.tile(self._PI(state, n).T, (1, self.n_features))
@@ -232,10 +235,22 @@ class ActorCriticIL(object):
         return res
 
     def _PI(self, state: Array, n: int) -> Array:
-        return softmax(self.theta[n].T @ state / self.tau)[None, :]
+        try:
+            ret = softmax(self.theta[n, :].T @ state / self.tau)[None, :]
+        except Exception:
+            import ipdb
+
+            ipdb.set_trace()
+        return ret
 
     def _pi(self, state: Array, n: int) -> Array:
-        return softmax(self.theta[n].T @ state)[None, :]
+        try:
+            ret = softmax(self.theta[n, :].T @ state)[None, :]
+        except Exception:
+            import ipdb
+
+            ipdb.set_trace()
+        return ret
 
 
 if __name__ == "__main__":
@@ -287,7 +302,7 @@ if __name__ == "__main__":
         n=config.N_AGENTS,
         scenario="networked_spread",
         seed=seed,
-        central=False,
+        central=True,
     )
     agent = ActorCriticIL(
         n_players=config.N_AGENTS,

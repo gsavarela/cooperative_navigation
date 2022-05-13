@@ -6,12 +6,12 @@ EXPLORE_EPISODES = 975
 EPISODES = 1000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
 
-SEED = 1
-BASE_PATH = 'data/12_independent_learner/03_tau05'
+SEED = 0
+BASE_PATH = 'data/13_independent_learners_duo/03_tau05'
 # BASE_PATH = 'data/12_central_learner/03_tau05'
 
 N_WORKERS = 6
-N_AGENTS = 1
+N_AGENTS = 2
 
 PIPELINE_SEEDS = [
     47,
