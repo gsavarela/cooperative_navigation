@@ -14,7 +14,8 @@ import pandas as pd
 
 
 import config
-from central import ActorCriticCentral as Agent
+# from central import ActorCriticCentral as Agent
+from independent_learners import ActorCriticIL as Agent
 from environment import Environment
 from common import Observation, Action, Rewards, Array
 from plots import train_plot, rollout_plot

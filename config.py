@@ -1,16 +1,17 @@
 """Configuration"""
 ALPHA = 0.5  # ALPHA:
 BETA = 0.3  # BETA:
-TAU = 10.0   # Final TAU
+TAU = 5.0   # Final TAU
 EXPLORE_EPISODES = 975
 EPISODES = 1000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
 
-SEED = 0
-BASE_PATH = 'data/11_switching_duo_landmarks/03_tau10'
+SEED = 1
+BASE_PATH = 'data/12_independent_learner/03_tau05'
+# BASE_PATH = 'data/12_central_learner/03_tau05'
 
 N_WORKERS = 6
-N_AGENTS = 2
+N_AGENTS = 1
 
 PIPELINE_SEEDS = [
     47,
