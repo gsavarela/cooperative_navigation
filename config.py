@@ -7,11 +7,12 @@ EPISODES = 1000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
 
 SEED = 0
-BASE_PATH = 'data/16_duo/03_tau05/00_central'
+BASE_PATH = 'data/16_duo/03_tau05/'
 # BASE_PATH = 'data/12_central_learner/03_tau05'
 
 N_WORKERS = 6
 N_AGENTS = 2
+AGENT_TYPE = 'ActorCriticCentral'
 
 PIPELINE_SEEDS = [
     47,
@@ -45,4 +46,3 @@ PIPELINE_SEEDS = [
     75,
     76
 ]
-

@@ -14,9 +14,11 @@ import pandas as pd
 
 
 import config
-from central import ActorCriticCentral as Agent
-# from independent_learners import ActorCriticIL as Agent
-# from joint_learners import ActorCriticJoint as Agent
+from central import ActorCriticCentral
+from independent_learners import ActorCriticIL
+from joint_learners import ActorCriticJoint
+from interfaces import AgentInterface
+
 from environment import Environment
 from common import Observation, Action, Rewards, Array
 from plots import train_plot, rollout_plot
@@ -28,11 +30,24 @@ from plots import metrics_plot
 # Pipeline Types
 Trace = Tuple[Observation, Action, Rewards, Observation, Action]
 Traces = List[Trace]
-Result = Tuple[int, Environment, Agent, Traces, Array]
+Result = Tuple[int, Environment, AgentInterface, Traces, Array]
 Results = List[Result]
 Rollout = Tuple[int, Array]
 Rollouts = Tuple[Rollout]
 RuR = Union[Results, Rollouts]
+PATHS = {
+    "ActorCriticCentral": "00_central",
+    "ActorCriticJoint": "01_joint_learners",
+    "ActorCriticIL": "02_independent_learners",
+}
+
+
+def get_agent() -> AgentInterface:
+    return eval(config.AGENT_TYPE)
+
+
+def get_dir() -> str:
+    return config.BASE_PATH + "/" + PATHS[config.AGENT_TYPE]
 
 
 def train_w(args: Tuple[int]) -> Result:
@@ -121,7 +136,8 @@ def train(num: int, seed: int) -> Result:
         central=True,
     )
 
-    # Defines the central actor critic.
+    # Defines the actor critic agent.
+    Agent = get_agent()
     agent = Agent(
         n_players=env.n,
         n_features=env.n_features,
@@ -168,7 +184,7 @@ def train(num: int, seed: int) -> Result:
     return (num, env, agent, traces, res)
 
 
-def rollout(num: int, env: Environment, agent: Agent) -> Rollout:
+def rollout(num: int, env: Environment, agent: AgentInterface) -> Rollout:
     """Runs an evaluation run with the same environment.
 
     Parameters:
@@ -240,7 +256,7 @@ def top_k(tuples_list: RuR, k: int = 5) -> RuR:
 
 
 def simulate(
-    num: int, env: Environment, agent: Agent, save_directory_path: Path = None
+    num: int, env: Environment, agent: AgentInterface, save_directory_path: Path = None
 ) -> None:
     """Renders the experiment for 100 timesteps.
 
@@ -250,7 +266,7 @@ def simulate(
         The experiment identifier
     env: Environment
         The environment used to run.
-    agent: Agent
+    agent: AgentInterface
         The reinforcement learning agent (controls one or more players).
     """
     obs = env.reset()
@@ -285,13 +301,14 @@ def simulate(
             filename="simulation-pipeline-best.gif",
         )
 
+
 if __name__ == "__main__":
     from operator import itemgetter
     from multiprocessing.pool import Pool
     from pathlib import Path
     import shutil
 
-    target_dir = Path(config.BASE_PATH) / "02"
+    target_dir = Path(get_dir()) / "02"
     with Pool(config.N_WORKERS) as pool:
         results = pool.map(train_w, enumerate(config.PIPELINE_SEEDS))
     train_plot(get_results(results), save_directory_path=target_dir)
@@ -312,4 +329,4 @@ if __name__ == "__main__":
 
     simulate(*results_k[0][:3], save_directory_path=target_dir)
 
-    shutil.copy('config.py', target_dir.as_posix())
+    shutil.copy("config.py", target_dir.as_posix())

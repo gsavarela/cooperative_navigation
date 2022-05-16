@@ -29,9 +29,10 @@ from numpy.random import choice
 import config
 from common import Array, Observation, Action, ActionSet, Rewards
 from common import softmax
+from interfaces import AgentInterface
 
 
-class ActorCriticJoint(object):
+class ActorCriticJoint(AgentInterface):
     """Joint actor critic with Linear function approximation
 
     Centralized critic and independent actors.
@@ -203,19 +204,13 @@ class ActorCriticJoint(object):
         _s1 = np.hstack(next_state)
 
         # Beware for two agents.
-        delta = (
-            np.mean(next_rewards)
-            - self.mu
-            + (_s1 - _s0) @ self.omega
-        )
+        delta = np.mean(next_rewards) - self.mu + (_s1 - _s0) @ self.omega
         delta = np.clip(delta, -1, 1)
         self.omega += self.alpha * delta * _s0
         self.omega = np.clip(self.omega, -1, 1)
 
         for n in range(self.n_players):
-            self.theta[n] += (
-                self.beta * delta * self._psi(_s0, actions[n], n)
-            )
+            self.theta[n] += self.beta * delta * self._psi(_s0, actions[n], n)
 
         self.mu += self.zeta * delta
         self.step += 1
@@ -247,18 +242,25 @@ if __name__ == "__main__":
     from pathlib import Path
     from environment import Environment
     import pandas as pd
+    import shutil
 
     from plots import save_frames_as_gif
     from plots import metrics_plot, returns_plot
     from tqdm.auto import trange
 
+    def get_dir():
+        return (
+            Path(config.BASE_PATH)
+            / "01_joint_learners"
+            / "{0:02d}".format(config.SEED)
+        )
     # Some helpful functions
     def plot_rewards(rewards, episodes) -> None:
         metrics_plot(
             rewards,
             "Average Rewards",
             "Train Rollouts (seed={0})".format(seed),
-            save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
+            save_directory_path=get_dir(),
             episodes=episodes,
         )
 
@@ -268,7 +270,7 @@ if __name__ == "__main__":
             "mu",
             "Train Mu (seed={0})".format(seed),
             rollouts=False,
-            save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
+            save_directory_path=get_dir(),
             episodes=episodes,
         )
 
@@ -277,7 +279,7 @@ if __name__ == "__main__":
             rewards,
             episodes,
             "Train Returns (seed={0})".format(seed),
-            save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
+            save_directory_path=get_dir(),
         )
 
     def plot_eval(rewards) -> None:
@@ -285,14 +287,12 @@ if __name__ == "__main__":
             rewards,
             "Average Rewards",
             "Evaluation Rollouts (seed={0})".format(seed),
-            save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
+            save_directory_path=get_dir(),
         )
 
-
     def save(data, filename) -> None:
-        path = Path(config.BASE_PATH) / "{0:02d}".format(config.SEED)
         csvname = "{0}.csv".format(filename)
-        file_path = path / csvname
+        file_path = Path(get_dir()) / csvname
         pd.DataFrame(data=data.round(2)).to_csv(file_path.as_posix(), sep=",")
 
     seed = config.SEED
@@ -346,9 +346,17 @@ if __name__ == "__main__":
     plot_returns(rewards, episodes)
     plot_rewards(rewards, episodes)
     plot_mus(mus, episodes)
+
+    pd.DataFrame(
+        data=np.array(rewards).reshape((100, config.EPISODES)),
+        columns=[*range(config.EPISODES)],
+    ).to_csv(
+        (Path(get_dir() / "train-seed{0}.csv".format(config.SEED)).as_posix()),
+        sep=",",
+    )
     # This is a validation run.
     obs = env.reset()
-    agent.reset()
+    agent.reset(seed=config.SEED)
     agent.explore = False
     actions = agent.act(obs)
     frames = []
@@ -369,8 +377,14 @@ if __name__ == "__main__":
         rewards.append(np.mean(next_rewards))
 
     plot_eval(rewards)
+    pd.DataFrame(data=np.array(rewards).reshape((100, 1)), columns=[1]).to_csv(
+        (Path(get_dir()) / "test-seed{0}.csv".format(config.SEED)).as_posix(), sep=","
+    )
     save_frames_as_gif(
         frames,
-        dir_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
+        dir_path=get_dir(),
         filename="simulation-seed{0:02d}.gif".format(seed),
+    )
+    shutil.copy(
+        "config.py", Path(get_dir()).as_posix()
     )
