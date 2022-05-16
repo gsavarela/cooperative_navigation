@@ -128,11 +128,11 @@ def _to_filename(suptitle: str) -> str:
 
 def metrics_plot(
     metrics: List[float],
-    episodes: List[int],
     ylabel: str,
     suptitle: str,
     save_directory_path: Path = None,
     rollouts: bool = True,
+    episodes: List[int] = [],
 ) -> None:
     """Plots the `reward`, `|omega|` or any other metric for diagnostics.
 
@@ -140,8 +140,6 @@ def metrics_plot(
     -----------
     metrics: List[float]
         The metrics collected during training, e.g, rewards.
-    episodes: List[int]
-        The list with episodes.
     ylabel: str
         The name of the metric.
     suptitle: str
@@ -151,6 +149,9 @@ def metrics_plot(
     rollouts: bool = True
         Saves three rollouts that give an indication of training. Or
         Saves a verylong file of all training steps in sequence.
+    episodes: List[int] = []
+        The list with episodes.
+        If not provided is considered to be a single episode
     """
 
     metrics = np.array(metrics)
@@ -159,7 +160,7 @@ def metrics_plot(
     fig = plt.figure()
     # fig.set_size_inches(FIGURE_X, FIGURE_Y)
 
-    if rollouts:
+    if rollouts and len(set(episodes)) > 1:
         Y = []
         first, mid, last = (
             int(np.min(episodes)),
@@ -174,7 +175,7 @@ def metrics_plot(
 
     n_steps = Y.shape[0]
     X = np.linspace(1, n_steps, n_steps)
-    if rollouts:
+    if rollouts and len(set(episodes)) > 1:
         labels = tuple(["episode %s" % idx for idx in (first, mid, last)])
         for idx in range(3):
             plt.plot(X, Y[:, idx], label=labels[idx])

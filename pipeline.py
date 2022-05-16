@@ -22,6 +22,7 @@ from common import Observation, Action, Rewards, Array
 from plots import train_plot, rollout_plot
 from tqdm.auto import trange
 from plots import save_frames_as_gif
+from plots import metrics_plot
 
 
 # Pipeline Types
@@ -257,18 +258,27 @@ def simulate(
     agent.explore = False
     actions = agent.act(obs)
     frames = []
+    rewards = []
     for _ in trange(100, desc="timesteps"):
         sleep(0.1)
         frames += env.render(mode="rgb_array")  # for saving
 
-        next_obs, _ = env.step(actions)
+        next_obs, next_rewards = env.step(actions)
 
         next_actions = agent.act(next_obs)
 
         obs = next_obs
         actions = next_actions
+        rewards.append(np.mean(next_rewards))
 
     if save_directory_path is not None:
+        metrics_plot(
+            rewards,
+            "Average Rewards",
+            "Evaluation Rollout (num={0})".format(num),
+            save_directory_path=save_directory_path,
+            episodes=[],
+        )
         save_frames_as_gif(
             frames,
             dir_path=save_directory_path,
