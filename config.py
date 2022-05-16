@@ -6,8 +6,8 @@ EXPLORE_EPISODES = 975
 EPISODES = 1000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
 
-SEED = 0
-BASE_PATH = 'data/13_independent_learners_duo/03_tau05'
+SEED = 1
+BASE_PATH = 'data/14_joint_learners_duo/03_tau05'
 # BASE_PATH = 'data/12_central_learner/03_tau05'
 
 N_WORKERS = 6

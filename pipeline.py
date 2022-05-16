@@ -15,7 +15,8 @@ import pandas as pd
 
 import config
 # from central import ActorCriticCentral as Agent
-from independent_learners import ActorCriticIL as Agent
+# from independent_learners import ActorCriticIL as Agent
+from joint_learners import ActorCriticJoint as Agent
 from environment import Environment
 from common import Observation, Action, Rewards, Array
 from plots import train_plot, rollout_plot
@@ -273,7 +274,6 @@ def simulate(
             dir_path=save_directory_path,
             filename="simulation-pipeline-best.gif",
         )
-
 
 if __name__ == "__main__":
     from operator import itemgetter
