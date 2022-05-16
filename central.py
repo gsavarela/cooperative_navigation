@@ -250,20 +250,20 @@ if __name__ == "__main__":
     def plot_rewards(rewards, episodes) -> None:
         metrics_plot(
             rewards,
-            episodes,
             "Average Rewards",
             "Train Rollouts (seed={0})".format(seed),
             save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
+            episodes=episodes,
         )
 
     def plot_mus(mus, episodes) -> None:
         metrics_plot(
             mus,
-            episodes,
             "mu",
             "Train Mu (seed={0})".format(seed),
             rollouts=False,
             save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
+            episodes=episodes,
         )
 
     def plot_returns(rewards, episodes) -> None:
@@ -272,6 +272,15 @@ if __name__ == "__main__":
             episodes,
             "Train Returns (seed={0})".format(seed),
             save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
+        )
+
+    def plot_eval(rewards, episodes) -> None:
+        metrics_plot(
+            rewards,
+            "Average Rewards",
+            "Evaluation Rollouts (seed={0})".format(seed),
+            save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
+            episodes=episodes,
         )
 
     def save(data, filename) -> None:
@@ -349,6 +358,7 @@ if __name__ == "__main__":
         obs = next_obs
         actions = next_actions
 
+    plot_eval(rewards, episodes)
     save_frames_as_gif(
         frames,
         dir_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),

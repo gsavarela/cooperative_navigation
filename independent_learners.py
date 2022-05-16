@@ -267,20 +267,20 @@ if __name__ == "__main__":
     def plot_rewards(rewards, episodes) -> None:
         metrics_plot(
             rewards,
-            episodes,
             "Average Rewards",
             "Train Rollouts (seed={0})".format(seed),
             save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
+            episodes=episodes,
         )
 
     def plot_mus(mus, episodes) -> None:
         metrics_plot(
             mus,
-            episodes,
             "mu",
             "Train Mu (seed={0})".format(seed),
             rollouts=False,
             save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
+            episodes=episodes,
         )
 
     def plot_returns(rewards, episodes) -> None:
@@ -288,6 +288,14 @@ if __name__ == "__main__":
             rewards,
             episodes,
             "Train Returns (seed={0})".format(seed),
+            save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
+        )
+
+    def plot_eval(rewards) -> None:
+        metrics_plot(
+            rewards,
+            "Average Rewards",
+            "Evaluation Rollouts (seed={0})".format(seed),
             save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
         )
 
@@ -354,6 +362,7 @@ if __name__ == "__main__":
     agent.explore = False
     actions = agent.act(obs)
     frames = []
+    episodes = []
     for _ in trange(100, desc="timesteps"):
         # env.render()  # for humans
         sleep(0.1)
@@ -366,7 +375,9 @@ if __name__ == "__main__":
 
         obs = next_obs
         actions = next_actions
+        rewards.append(np.mean(next_rewards))
 
+    plot_eval(rewards)
     save_frames_as_gif(
         frames,
         dir_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),

@@ -280,13 +280,12 @@ if __name__ == "__main__":
             save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
         )
 
-    def plot_eval(rewards, episodes) -> None:
+    def plot_eval(rewards) -> None:
         metrics_plot(
             rewards,
             "Average Rewards",
             "Evaluation Rollouts (seed={0})".format(seed),
             save_directory_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
-            episodes=episodes,
         )
 
 
@@ -354,7 +353,6 @@ if __name__ == "__main__":
     actions = agent.act(obs)
     frames = []
     rewards = []
-    episodes = []
     for _ in trange(100, desc="timesteps"):
         # env.render()  # for humans
         sleep(0.1)
@@ -369,9 +367,8 @@ if __name__ == "__main__":
         actions = next_actions
 
         rewards.append(np.mean(next_rewards))
-        episodes.append(-1)
 
-    plot_eval(rewards, episodes)
+    plot_eval(rewards)
     save_frames_as_gif(
         frames,
         dir_path=Path(config.BASE_PATH) / "{0:02d}".format(config.SEED),
