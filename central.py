@@ -28,9 +28,10 @@ from numpy.random import choice
 import config
 from common import Array, Observation, Action, ActionSet, Rewards
 from common import softmax
+from interfaces import AgentInterface
 
 
-class ActorCriticCentral(object):
+class ActorCriticCentral(AgentInterface):
     """ActorCritic with Linear function approximation
 
     Attributes:
@@ -142,7 +143,7 @@ class ActorCriticCentral(object):
         else:
             return config.TAU
 
-    def reset(self, seed=None):
+    def reset(self, seed=None) -> None:
         """Resets seed, updates number of steps."""
         if seed is not None:
             np.random.seed(seed)

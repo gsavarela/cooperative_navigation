@@ -14,8 +14,8 @@ import pandas as pd
 
 
 import config
-# from central import ActorCriticCentral as Agent
-from independent_learners import ActorCriticIL as Agent
+from central import ActorCriticCentral as Agent
+# from independent_learners import ActorCriticIL as Agent
 # from joint_learners import ActorCriticJoint as Agent
 from environment import Environment
 from common import Observation, Action, Rewards, Array

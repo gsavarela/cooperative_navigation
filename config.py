@@ -7,7 +7,7 @@ EPISODES = 1000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
 
 SEED = 0
-BASE_PATH = 'data/15_duo/03_tau05/indepenent_learners'
+BASE_PATH = 'data/16_duo/03_tau05/00_central'
 # BASE_PATH = 'data/12_central_learner/03_tau05'
 
 N_WORKERS = 6
