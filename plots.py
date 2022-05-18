@@ -133,6 +133,7 @@ def metrics_plot(
     save_directory_path: Path = None,
     rollouts: bool = True,
     episodes: List[int] = [],
+    smooth: bool = False,
 ) -> None:
     """Plots the `reward`, `|omega|` or any other metric for diagnostics.
 
@@ -152,6 +153,8 @@ def metrics_plot(
     episodes: List[int] = []
         The list with episodes.
         If not provided is considered to be a single episode
+    smooth: bool = False
+        Provides a trend curve which is somewhat heavy to compute.
     """
 
     metrics = np.array(metrics)
@@ -181,12 +184,13 @@ def metrics_plot(
             plt.plot(X, Y[:, idx], label=labels[idx])
     else:
         plt.plot(X, Y, label=ylabel)
-        Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
-        plt.plot(
-            *np.hsplit(Y_smooth, indices_or_sections=2),
-            c=SMOOTHING_CURVE_COLOR,
-            label="smooth"
-        )
+        if smooth:
+            Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
+            plt.plot(
+                *np.hsplit(Y_smooth, indices_or_sections=2),
+                c=SMOOTHING_CURVE_COLOR,
+                label="smooth"
+            )
 
     plt.xlabel("Time")
     plt.ylabel(ylabel)
@@ -201,6 +205,7 @@ def returns_plot(
     episodes: List[int],
     suptitle,
     save_directory_path: Path = None,
+    smooth: bool = False,
 ) -> None:
     """Plots the `reward`, `|omega|` or any other metric for diagnostics.
 
@@ -214,6 +219,8 @@ def returns_plot(
         The title.
     save_directory_path: Path = None
         Saves the reward plot on a pre-defined path.
+    smooth: bool = False
+        Provides a trend curve which is somewhat heavy to compute.
     """
 
     rewards = np.array(rewards)
@@ -226,29 +233,37 @@ def returns_plot(
 
     n_steps = Y.shape[0]
     X = np.linspace(1, n_steps, n_steps)
-    Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
-
+    if smooth:
+        Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
+        plt.plot(
+            *np.hsplit(Y_smooth, indices_or_sections=2),
+            c=SMOOTHING_CURVE_COLOR,
+            label="smooth"
+        )
+        plt.legend(loc=4)
     plt.plot(X, Y)
-    plt.plot(*np.hsplit(Y_smooth, indices_or_sections=2), label="smooth")
     plt.xlabel("Episode")
     plt.ylabel("Average Reward Return")
-    plt.legend(loc=4)
     plt.suptitle(suptitle)
     _savefig(suptitle, save_directory_path)
     plt.show()
 
 
-def train_plot(results: Array, n: int = 1, save_directory_path: Path = None) -> None:
+def train_plot(
+    results: Array, n: int = 1, save_directory_path: Path = None, smooth: bool = False
+) -> None:
     """Plots the results from a training run.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     results: Array
         A N x M array with train returns, where:
             N: The number of episodes.
             M: The number of independent runs.
     n: int = 1
         The number of agents
+    smooth: bool = False
+        Provides a trend curve which is somewhat heavy to compute.
     """
     _, M = results.shape
     Y = np.mean(results, axis=1)
@@ -257,14 +272,16 @@ def train_plot(results: Array, n: int = 1, save_directory_path: Path = None) -> 
     n_steps = Y.shape[0]
     X = np.linspace(1, n_steps, n_steps)
 
-    Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
-
     plt.plot(X, Y, c="C0", label="mean")
-    plt.plot(
-        *np.hsplit(Y_smooth, indices_or_sections=2),
-        c=SMOOTHING_CURVE_COLOR,
-        label="smooth"
-    )
+
+    if smooth:
+        Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
+        plt.plot(
+            *np.hsplit(Y_smooth, indices_or_sections=2),
+            c=SMOOTHING_CURVE_COLOR,
+            label="smooth"
+        )
+        plt.legend()
     plt.fill_between(X, Y - Y_std, Y + Y_std, facecolor="C0", alpha=0.5)
     plt.suptitle("Train (N=%s, M=%s)" % (n, M))
     plt.xlabel("Episode")
@@ -273,7 +290,9 @@ def train_plot(results: Array, n: int = 1, save_directory_path: Path = None) -> 
     plt.show()
 
 
-def rollout_plot(results: Array, n: int = 1, save_directory_path: Path = None) -> None:
+def rollout_plot(
+    results: Array, n: int = 1, save_directory_path: Path = None, smooth: bool = False
+) -> None:
     """Plots the results from a rollout run.
 
     Parameters:
@@ -282,9 +301,10 @@ def rollout_plot(results: Array, n: int = 1, save_directory_path: Path = None) -
         A N x M array with train returns, where:
             N: The number of timesteps.
             M: The number of independent runs.
-
     n: int = 1
         The number of agents
+    smooth: bool = False
+        Provides a trend curve which is somewhat heavy to compute.
     """
     _, M = results.shape
     Y = np.mean(results, axis=1)
@@ -292,14 +312,17 @@ def rollout_plot(results: Array, n: int = 1, save_directory_path: Path = None) -
 
     n_steps = Y.shape[0]
     X = np.linspace(1, n_steps, n_steps)
-    Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
 
     plt.plot(X, Y, c="C0")
-    plt.plot(
-        *np.hsplit(Y_smooth, indices_or_sections=2),
-        c=SMOOTHING_CURVE_COLOR,
-        label="smooth"
-    )
+
+    if smooth:
+        Y_smooth = sm.nonparametric.lowess(Y, X, frac=0.10)
+        plt.plot(
+            *np.hsplit(Y_smooth, indices_or_sections=2),
+            c=SMOOTHING_CURVE_COLOR,
+            label="smooth"
+        )
+        plt.legend()
     plt.fill_between(X, Y - Y_std, Y + Y_std, facecolor="C0", alpha=0.5)
     plt.suptitle("Rollouts (N=%s, M=%s)" % (n, M))
     plt.xlabel("Timesteps")
