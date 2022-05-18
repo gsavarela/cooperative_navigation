@@ -142,8 +142,8 @@ def train(num: int, seed: int) -> Result:
         n_players=env.n,
         n_features=env.n_features,
         action_set=env.action_set,
-        alpha=0.5,
-        beta=0.3,
+        alpha=config.ALPHA,
+        beta=config.BETA,
         explore_episodes=config.EXPLORE_EPISODES,
         explore=config.EXPLORE,
         decay=False,
@@ -291,7 +291,7 @@ def simulate(
         metrics_plot(
             rewards,
             "Average Rewards",
-            "Evaluation Rollout (num={0:02d})".format(num),
+            "Evaluation Rollout (N={0}, num={1:02d})".format(config.N_AGENTS, num),
             save_directory_path=save_directory_path,
             episodes=[],
         )
@@ -314,13 +314,13 @@ if __name__ == "__main__":
     target_dir = Path(get_dir()) / "02"
     with Pool(config.N_WORKERS) as pool:
         results = pool.map(train_w, enumerate(config.PIPELINE_SEEDS))
-    train_plot(get_results(results), save_directory_path=target_dir)
+    train_plot(get_results(results), n=config.N_AGENTS, save_directory_path=target_dir)
 
     results_k = top_k(results, k=3)
     train_plot(get_results(results_k))
 
     rollouts = [*map(rollout_w, results)]
-    rollout_plot(get_results(rollouts), save_directory_path=target_dir)
+    rollout_plot(get_results(rollouts), n=config.N_AGENTS, save_directory_path=target_dir)
     pd.DataFrame(
         data=get_results(rollouts), columns=config.PIPELINE_SEEDS
     ).describe().to_csv((target_dir / "pipeline.csv").as_posix(), sep=",")
@@ -328,7 +328,7 @@ if __name__ == "__main__":
     rollouts_k = [
         roll for roll in rollouts if roll[0] in set([*map(itemgetter(0), results_k)])
     ]
-    rollout_plot(get_results(rollouts_k), save_directory_path=target_dir)
+    rollout_plot(get_results(rollouts_k), n=config.N_AGENTS, save_directory_path=target_dir)
 
     simulate(*results_k[0][:3], save_directory_path=target_dir)
 

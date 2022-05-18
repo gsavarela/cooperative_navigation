@@ -271,7 +271,7 @@ if __name__ == "__main__":
         metrics_plot(
             rewards,
             "Average Rewards",
-            "Train Rollouts (seed={0})".format(seed),
+            "Train Rollouts (N={0}, seed={1:02d})".format(config.N_AGENTS, seed),
             save_directory_path=get_dir(),
             episodes=episodes,
         )
@@ -280,7 +280,7 @@ if __name__ == "__main__":
         metrics_plot(
             mus,
             "mu",
-            "Train Mu (seed={0})".format(seed),
+            "Train Mu (N={0}, seed={1:02d})".format(config.N_AGENTS, seed),
             rollouts=False,
             save_directory_path=get_dir(),
             episodes=episodes,
@@ -290,7 +290,7 @@ if __name__ == "__main__":
         returns_plot(
             rewards,
             episodes,
-            "Train Returns (seed={0})".format(seed),
+            "Train Returns (N={0}, seed={1:02d})".format(config.N_AGENTS, seed),
             save_directory_path=get_dir(),
         )
 
@@ -298,7 +298,7 @@ if __name__ == "__main__":
         metrics_plot(
             rewards,
             "Average Rewards",
-            "Evaluation Rollouts (seed={0})".format(seed),
+            "Evaluation Rollouts (N={0}, seed={1:02d})".format(config.N_AGENTS, seed),
             save_directory_path=get_dir(),
         )
 
@@ -363,7 +363,7 @@ if __name__ == "__main__":
         data=np.array(rewards).reshape((100, config.EPISODES)),
         columns=[*range(config.EPISODES)],
     ).to_csv(
-        (Path(get_dir() / "train-seed{0}.csv".format(config.SEED)).as_posix()),
+        (Path(get_dir() / "train-seed{0:02d}.csv".format(config.SEED)).as_posix()),
         sep=",",
     )
     # This is a validation run.
