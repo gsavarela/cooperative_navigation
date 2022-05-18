@@ -291,9 +291,12 @@ def simulate(
         metrics_plot(
             rewards,
             "Average Rewards",
-            "Evaluation Rollout (num={0})".format(num),
+            "Evaluation Rollout (num={0:02d})".format(num),
             save_directory_path=save_directory_path,
             episodes=[],
+        )
+        pd.DataFrame(data=np.array(rewards).reshape((100, 1)), columns=[1]).to_csv(
+            ("{0}/evaluation_rollout-num{1:02d}.csv".format(save_directory_path, num)), sep=","
         )
         save_frames_as_gif(
             frames,
