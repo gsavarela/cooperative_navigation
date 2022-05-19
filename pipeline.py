@@ -16,7 +16,7 @@ import pandas as pd
 import config
 from central import ActorCriticCentral
 from independent_learners import ActorCriticIL
-from joint_learners import ActorCriticJoint
+from distributed_learners import ActorCriticDistributed
 from interfaces import AgentInterface
 
 from environment import Environment
@@ -37,7 +37,7 @@ Rollouts = Tuple[Rollout]
 RuR = Union[Results, Rollouts]
 PATHS = {
     "ActorCriticCentral": "00_central",
-    "ActorCriticJoint": "01_joint_learners",
+    "ActorCriticDistributed": "01_distributed_learners",
     "ActorCriticIL": "02_independent_learners",
 }
 

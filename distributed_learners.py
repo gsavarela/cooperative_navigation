@@ -32,8 +32,8 @@ from common import softmax
 from interfaces import AgentInterface
 
 
-class ActorCriticJoint(AgentInterface):
-    """Joint actor critic with Linear function approximation
+class ActorCriticDistributed(AgentInterface):
+    """Distributed actor critic with Linear function approximation
 
     Centralized critic and independent actors.
 
@@ -132,7 +132,7 @@ class ActorCriticJoint(AgentInterface):
     @property
     def label(self) -> str:
         """A description for this particular agent."""
-        return "ActorCriticJoint(N={0})".format(self.n_players)
+        return "ActorCriticDistributed(N={0})".format(self.n_players)
 
     @property
     def task(self) -> str:
@@ -251,7 +251,7 @@ if __name__ == "__main__":
     def get_dir():
         return (
             Path(config.BASE_PATH)
-            / "01_joint_learners"
+            / "01_distributed_learners"
             / "{0:02d}".format(config.SEED)
         )
     # Some helpful functions
@@ -302,7 +302,7 @@ if __name__ == "__main__":
         seed=seed,
         central=True,
     )
-    agent = ActorCriticJoint(
+    agent = ActorCriticDistributed(
         n_players=config.N_AGENTS,
         n_features=env.n_features,
         action_set=env.action_set,
