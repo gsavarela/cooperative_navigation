@@ -6,10 +6,6 @@
     * Fully observability setting.
     * Individual rewards.
 
-TODO:
------
- * Add an interface for RLAgent (type agent).
-
 References:
 -----------
 ..[1] Sutton and Barto 2018. "Introduction to Reinforcement
@@ -28,10 +24,10 @@ from numpy.random import choice
 import config
 from common import Array, Observation, Action, ActionSet, Rewards
 from common import softmax
-from interfaces import AgentInterface
+from interfaces import AgentInterface, ActorCriticInterface
 
 
-class ActorCriticIL(AgentInterface):
+class ActorCriticIL(AgentInterface, ActorCriticInterface):
     """ActorCritic with Linear function approximation
 
     Attributes:
@@ -86,6 +82,8 @@ class ActorCriticIL(AgentInterface):
 
     """
 
+    fully_observable = False
+
     def __init__(
         self,
         n_players: int,
@@ -125,35 +123,6 @@ class ActorCriticIL(AgentInterface):
         self.step = 0
         self.episodes = 0
         self.reset(seed=seed)
-
-    @property
-    def label(self) -> str:
-        """A description for this particular agent."""
-        return "ActorCriticIL({0})".format(self.task)
-
-    @property
-    def task(self) -> str:
-        """Continuing or episodic."""
-        return "continuing"
-
-    @property
-    def tau(self) -> float:
-        """The temperature parameter regulating exploration."""
-        if self.explore:
-            return max(100 - (self.episodes - 1) * self.epsilon_step, config.TAU)
-        else:
-            return config.TAU
-
-    def reset(self, seed=None):
-        """Resets seed, updates number of steps."""
-        if seed is not None:
-            np.random.seed(seed)
-
-        if self.decay:
-            self.decay_count += 1
-            self.alpha = np.power(self.decay_count, -0.85)
-            self.beta = np.power(self.decay_count, -0.65)
-        self.episodes += 1
 
     def act(self, state: Observation) -> Action:
         """Select an action based on state
@@ -230,21 +199,11 @@ class ActorCriticIL(AgentInterface):
         return res
 
     def _PI(self, state: Array, n: int) -> Array:
-        try:
-            ret = softmax(self.theta[n, :].T @ state / self.tau)[None, :]
-        except Exception:
-            import ipdb
-
-            ipdb.set_trace()
+        ret = softmax(self.theta[n, :].T @ state / self.tau)[None, :]
         return ret
 
     def _pi(self, state: Array, n: int) -> Array:
-        try:
-            ret = softmax(self.theta[n, :].T @ state)[None, :]
-        except Exception:
-            import ipdb
-
-            ipdb.set_trace()
+        ret = softmax(self.theta[n, :].T @ state)[None, :]
         return ret
 
 
@@ -325,6 +284,10 @@ if __name__ == "__main__":
         decay=False,
         seed=config.SEED,
     )
+
+    print("Fully observable: {0}".format(agent.fully_observable))
+    print("Fully observable: {0}".format(ActorCriticIL.fully_observable))
+    print(agent.label)
     first = True
     episodes = []
     rewards = []
@@ -396,6 +359,4 @@ if __name__ == "__main__":
         dir_path=get_dir(),
         filename="simulation-seed{0:02d}.gif".format(seed),
     )
-    shutil.copy(
-        "config.py", Path(get_dir()).as_posix()
-    )
+    shutil.copy("config.py", Path(get_dir()).as_posix())

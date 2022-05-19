@@ -29,10 +29,10 @@ from numpy.random import choice
 import config
 from common import Array, Observation, Action, ActionSet, Rewards
 from common import softmax
-from interfaces import AgentInterface
+from interfaces import AgentInterface, ActorCriticInterface
 
 
-class ActorCriticDistributed(AgentInterface):
+class ActorCriticDistributed(AgentInterface, ActorCriticInterface):
     """Distributed actor critic with Linear function approximation
 
     Centralized critic and independent actors.
@@ -89,6 +89,8 @@ class ActorCriticDistributed(AgentInterface):
 
     """
 
+    fully_observable = True
+
     def __init__(
         self,
         n_players: int,
@@ -128,35 +130,6 @@ class ActorCriticDistributed(AgentInterface):
         self.step = 0
         self.episodes = 0
         self.reset(seed=seed)
-
-    @property
-    def label(self) -> str:
-        """A description for this particular agent."""
-        return "ActorCriticDistributed(N={0})".format(self.n_players)
-
-    @property
-    def task(self) -> str:
-        """Continuing or episodic."""
-        return "continuing"
-
-    @property
-    def tau(self) -> float:
-        """The temperature parameter regulating exploration."""
-        if self.explore:
-            return max(100 - (self.episodes - 1) * self.epsilon_step, config.TAU)
-        else:
-            return config.TAU
-
-    def reset(self, seed=None):
-        """Resets seed, updates number of steps."""
-        if seed is not None:
-            np.random.seed(seed)
-
-        if self.decay:
-            self.decay_count += 1
-            self.alpha = np.power(self.decay_count, -0.85)
-            self.beta = np.power(self.decay_count, -0.65)
-        self.episodes += 1
 
     def act(self, state: Observation) -> Action:
         """Select an action based on state
@@ -254,6 +227,7 @@ if __name__ == "__main__":
             / "01_distributed_learners"
             / "{0:02d}".format(config.SEED)
         )
+
     # Some helpful functions
     def plot_rewards(rewards, episodes) -> None:
         metrics_plot(
@@ -313,6 +287,9 @@ if __name__ == "__main__":
         decay=False,
         seed=config.SEED,
     )
+    print("Fully observable: {0}".format(agent.fully_observable))
+    print("Fully observable: {0}".format(ActorCriticDistributed.fully_observable))
+    print(agent.label)
     first = True
     episodes = []
     rewards = []
@@ -378,13 +355,12 @@ if __name__ == "__main__":
 
     plot_eval(rewards)
     pd.DataFrame(data=np.array(rewards).reshape((100, 1)), columns=[1]).to_csv(
-        (Path(get_dir()) / "test-seed{0:02d}.csv".format(config.SEED)).as_posix(), sep=","
+        (Path(get_dir()) / "test-seed{0:02d}.csv".format(config.SEED)).as_posix(),
+        sep=",",
     )
     save_frames_as_gif(
         frames,
         dir_path=get_dir(),
         filename="simulation-seed{0:02d}.gif".format(seed),
     )
-    shutil.copy(
-        "config.py", Path(get_dir()).as_posix()
-    )
+    shutil.copy("config.py", Path(get_dir()).as_posix())
