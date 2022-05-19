@@ -74,6 +74,14 @@ class NetworkedSpreadScenario(BaseScenario):
         Computes the reward for player
     """
 
+    def __init__(self, fully_observable: bool = True):
+        super(NetworkedSpreadScenario, self).__init__()
+        self._fully_observable = fully_observable
+
+    @property
+    def fully_observable(self) -> bool:
+        return self._fully_observable
+
     @property
     def assignment(self) -> Array:
         """A mapping from 'N' players to 'N' landmarks."""
@@ -83,11 +91,6 @@ class NetworkedSpreadScenario(BaseScenario):
     def coefficients(self) -> Array:
         """A preference from landmarks to be covered. (set to 1)"""
         return self._coefficients
-
-    @property
-    def fully_observable(self) -> bool:
-        """Agents have full access to the state"""
-        return True
 
     @property
     def seed(self) -> int:
@@ -181,10 +184,16 @@ class NetworkedSpreadScenario(BaseScenario):
         """Generates an observation for the Agent."""
         # get positions of all entities in this player's reference frame
         # Warning assuming fully observable case
-        landmark = world.landmarks[world.agents.index(agent)]
-        res = np.concatenate(
-            [agent.state.p_pos, agent.state.p_vel, landmark.state.p_pos]
-        )
+        if self.fully_observable:
+            landmark = world.landmarks[world.agents.index(agent)]
+            res = np.concatenate(
+                [agent.state.p_pos, agent.state.p_vel, landmark.state.p_pos]
+            )
+        else:
+            res = np.concatenate(
+                [agent.state.p_pos, agent.state.p_vel]
+                + [mrk.state.p_pos for mrk in world.landmarks]
+            )
         return res
 
 

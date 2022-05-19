@@ -61,7 +61,7 @@ class Environment(Base):
         elif scenario == "simple_spread":
             self.scenario = ss.Scenario()
         else:
-            self.scenario = ns.NetworkedSpreadScenario()
+            self.scenario = ns.NetworkedSpreadScenario(fully_observable=central)
 
         self.world = self.scenario.make_world(n, seed)
         self.action_set = action_set(n)

@@ -3,7 +3,7 @@
     * Continuing tasks
     * V function approximation.
     * Linear function approximation.
-    * Fully observability setting.
+    * Partial observability setting.
     * Individual rewards.
 
 References:
@@ -81,7 +81,6 @@ class ActorCriticIL(AgentInterface, ActorCriticInterface):
         Learns from policy improvement and policy evalution.
 
     """
-
     fully_observable = False
 
     def __init__(
@@ -101,7 +100,7 @@ class ActorCriticIL(AgentInterface, ActorCriticInterface):
         self.n_players = n_players
         self.action_set = action_set
         self.n_actions = int(np.power(len(action_set), 1 / n_players))
-        self.n_features = n_features
+        self.n_features = n_features // n_players
 
         # Parameters
         # The feature are state-value function features, i.e,
@@ -139,8 +138,8 @@ class ActorCriticIL(AgentInterface, ActorCriticInterface):
 
         """
         ret = []
-        for n in range(self.n_players):
-            pi = self._PI(np.hstack(state), n)
+        for _n, _s in enumerate(state):
+            pi = self._PI(_s, _n)
             ret.append(choice(5, p=pi.flatten()))
         return tuple(ret)
 
@@ -171,18 +170,20 @@ class ActorCriticIL(AgentInterface, ActorCriticInterface):
         next_actions: Action
             The action for every player, select at t + 1.
         """
-        _s0 = np.hstack(state)
-        _s1 = np.hstack(next_state)
-        for n in range(self.n_players):
+        for _n in range(self.n_players):
+
+            _s0 = state[_n]
+            _s1 = next_state[_n]
+
             # Beware for two agents.
-            delta = next_rewards[n] - self.mu[n] + (_s1 - _s0) @ self.omega[n]
+            delta = next_rewards[_n] - self.mu[_n] + (_s1 - _s0) @ self.omega[_n]
             delta = np.clip(delta, -1, 1)
-            self.omega[n] += self.alpha * delta * _s0
-            self.omega[n] = np.clip(self.omega[n], -1, 1)
+            self.omega[_n] += self.alpha * delta * _s0
+            self.omega[_n] = np.clip(self.omega[_n], -1, 1)
 
-            self.theta[n] += self.beta * delta * self._psi(_s0, actions[n], n)
+            self.theta[_n] += self.beta * delta * self._psi(_s0, actions[_n], _n)
 
-            self.mu[n] += self.zeta * delta
+            self.mu[_n] += self.zeta * delta
             self.step += 1
 
     def _psi(self, state: Array, action: int, n: int) -> Array:
@@ -271,7 +272,7 @@ if __name__ == "__main__":
         n=config.N_AGENTS,
         scenario="networked_spread",
         seed=seed,
-        central=True,
+        central=ActorCriticIL.fully_observable,
     )
     agent = ActorCriticIL(
         n_players=config.N_AGENTS,

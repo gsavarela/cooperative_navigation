@@ -128,16 +128,18 @@ def train(num: int, seed: int) -> Result:
         results: Array
             The returns from the episodes.
     """
+    # Defines the actor critic agent.
+    Agent = get_agent()
+
     # Defines the environment
     env = Environment(
         n=config.N_AGENTS,
         scenario="networked_spread",
         seed=seed,
-        central=True,
+        central=Agent.fully_observable,
     )
 
-    # Defines the actor critic agent.
-    Agent = get_agent()
+    # Instanciates the actor critic
     agent = Agent(
         n_players=env.n,
         n_features=env.n_features,
