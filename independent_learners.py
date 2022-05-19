@@ -27,7 +27,7 @@ from common import softmax
 from interfaces import AgentInterface, ActorCriticInterface
 
 
-class ActorCriticIL(AgentInterface, ActorCriticInterface):
+class ActorCriticIndependent(AgentInterface, ActorCriticInterface):
     """ActorCritic with Linear function approximation
 
     Attributes:
@@ -272,9 +272,9 @@ if __name__ == "__main__":
         n=config.N_AGENTS,
         scenario="networked_spread",
         seed=seed,
-        central=ActorCriticIL.fully_observable,
+        central=ActorCriticIndependent.fully_observable,
     )
-    agent = ActorCriticIL(
+    agent = ActorCriticIndependent(
         n_players=config.N_AGENTS,
         n_features=env.n_features,
         action_set=env.action_set,
@@ -287,7 +287,7 @@ if __name__ == "__main__":
     )
 
     print("Fully observable: {0}".format(agent.fully_observable))
-    print("Fully observable: {0}".format(ActorCriticIL.fully_observable))
+    print("Fully observable: {0}".format(ActorCriticIndependent.fully_observable))
     print(agent.label)
     first = True
     episodes = []
