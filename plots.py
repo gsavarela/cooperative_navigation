@@ -7,6 +7,8 @@ from common import Array
 
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+
 from matplotlib import animation
 import statsmodels.api as sm  # Seaborn to make fast computations.
 import gym
@@ -331,7 +333,48 @@ def rollout_plot(
     plt.show()
 
 
-if __name__ == "__main__":
+def leader_plot(root_directory_path: Path, experiment_id: int, plot_type: str) -> None:
+    """Compares the plots of different agents.
+
+    Parameters
+    ----------
+    root_directory_path: Path
+        Root path from which to read.
+
+    experiment_id: int
+        Typically 0, 1, 2
+
+    plot_type: str
+        The name to be search on the key 'test', 'train', 'evaluation_rollout'
+    """
+    pattern = "*/{0:02d}/{1}*.csv".format(experiment_id, plot_type)
+    print([*root_directory_path.glob(pattern)])
+    for _n, _p in enumerate(root_directory_path.glob(pattern)):
+        _label = _p.parent.parent.stem
+        _df = pd.read_csv(_p.as_posix(), sep=",")
+        _X, _Y = zip(*_df["1"].items())
+        if plot_type in ('train', 'test'):
+            plt.plot(_X, np.cumsum(_Y), c="C{0}".format(_n), label=_label)
+        else:
+            plt.plot(_X, _Y, c="C{0}".format(_n), label=_label)
+
+    plt.suptitle("Learderboard {0}".format(plot_type))
+    plt.xlabel("Timesteps")
+    plt.ylabel("Cumulative Average Reward")
+    plt.legend()
+
+    # uses directory
+    plots_directory_path = root_directory_path / "plots"
+    plots_directory_path.mkdir(exist_ok=True)
+    file_path = plots_directory_path / "{0}_leader-{1:02d}.png".format(
+        plot_type, experiment_id
+    )
+    plt.savefig(file_path.as_posix())
+    plt.show()
+
+
+def test_save_frames_as_gif() -> None:
+    """Runs the CartPole environment for filming."""
     # Make gym env
     env = gym.make("CartPole-v1")
 
@@ -347,3 +390,20 @@ if __name__ == "__main__":
             break
     env.close()
     save_frames_as_gif(frames)
+
+
+def test_leader_plot(directory_path: Path = Path("./data/01_duo/1000")):
+    """Runs an example of leader_plot comparing"""
+
+    experiment_id = 1
+    leader_plot(directory_path, experiment_id, plot_type='train')
+    leader_plot(directory_path, experiment_id, plot_type='test')
+
+
+if __name__ == "__main__":
+    # Uncomment to test save_frames_as_gif
+    # test_save_frames_as_gif()
+    # Uncomment to test save_frames_as_gif
+    test_leader_plot(Path("./data/01_duo/1000"))
+    test_leader_plot(Path("./data/01_duo/10000"))
+    test_leader_plot(Path("./data/01_duo/5000"))

@@ -139,7 +139,7 @@ def train(num: int, seed: int) -> Result:
         central=Agent.fully_observable,
     )
 
-    # Instanciates the actor critic
+    # Instanciates the actor critic agent.
     agent = Agent(
         n_players=env.n,
         n_features=env.n_features,
@@ -298,7 +298,8 @@ def simulate(
             episodes=[],
         )
         pd.DataFrame(data=np.array(rewards).reshape((100, 1)), columns=[1]).to_csv(
-            ("{0}/evaluation_rollout-num{1:02d}.csv".format(save_directory_path, num)), sep=","
+            ("{0}/evaluation_rollout-num{1:02d}.csv".format(save_directory_path, num)),
+            sep=",",
         )
         save_frames_as_gif(
             frames,
@@ -317,20 +318,47 @@ if __name__ == "__main__":
     with Pool(config.N_WORKERS) as pool:
         results = pool.map(train_w, enumerate(config.PIPELINE_SEEDS))
     train_plot(get_results(results), n=config.N_AGENTS, save_directory_path=target_dir)
+    pd.DataFrame(data=get_results(results), columns=config.PIPELINE_SEEDS).to_csv(
+        (target_dir / "pipeline-train.csv").as_posix(), sep=","
+    )
+    pd.DataFrame(
+        data=get_results(results), columns=config.PIPELINE_SEEDS
+    ).describe().to_csv(
+        (target_dir / "pipeline-train-summary.csv").as_posix(), sep=","
+    )
 
     results_k = top_k(results, k=3)
     train_plot(get_results(results_k))
+    pd.DataFrame(
+        data=get_results(results_k),
+        columns=[config.PIPELINE_SEEDS[rok[0]] for rok in results_k],
+    ).to_csv((target_dir / "pipeline-results-best.csv").as_posix(), sep=",")
 
+    # Rollouts
     rollouts = [*map(rollout_w, results)]
-    rollout_plot(get_results(rollouts), n=config.N_AGENTS, save_directory_path=target_dir)
+    # Rollouts plot
+    rollout_plot(
+        get_results(rollouts), n=config.N_AGENTS, save_directory_path=target_dir
+    )
+    pd.DataFrame(data=get_results(rollouts), columns=config.PIPELINE_SEEDS).to_csv(
+        (target_dir / "pipeline-rollouts.csv").as_posix(), sep=","
+    )
     pd.DataFrame(
         data=get_results(rollouts), columns=config.PIPELINE_SEEDS
-    ).describe().to_csv((target_dir / "pipeline.csv").as_posix(), sep=",")
-
+    ).describe().to_csv(
+        (target_dir / "pipeline-rollouts-summary.csv").as_posix(), sep=","
+    )
+    # Rollouts plot -- K Best runs.
     rollouts_k = [
         roll for roll in rollouts if roll[0] in set([*map(itemgetter(0), results_k)])
     ]
-    rollout_plot(get_results(rollouts_k), n=config.N_AGENTS, save_directory_path=target_dir)
+    rollout_plot(
+        get_results(rollouts_k), n=config.N_AGENTS, save_directory_path=target_dir
+    )
+    pd.DataFrame(
+        data=get_results(rollouts_k),
+        columns=[config.PIPELINE_SEEDS[rok[0]] for rok in rollouts_k],
+    ).to_csv((target_dir / "pipeline-rollouts-best.csv").as_posix(), sep=",")
 
     simulate(*results_k[0][:3], save_directory_path=target_dir)
 
