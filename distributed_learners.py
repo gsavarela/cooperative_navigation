@@ -7,10 +7,6 @@
     * Same reward for both agents.
     * Fully cooperative setting.
 
-TODO:
------
- * Add an interface for RLAgent (type agent).
-
 References:
 -----------
 ..[1] Sutton and Barto 2018. "Introduction to Reinforcement
@@ -107,7 +103,7 @@ class ActorCriticDistributed(AgentInterface, ActorCriticInterface):
         # Attributes
         self.n_players = n_players
         self.action_set = action_set
-        self.n_actions = int(np.power(len(action_set), 1 / n_players))
+        self.n_actions = int(np.round(np.power(len(action_set), 1 / n_players), 0))
         self.n_features = n_features
 
         # Parameters

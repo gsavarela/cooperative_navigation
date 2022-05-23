@@ -30,7 +30,7 @@ from interfaces import AgentInterface, ActorCriticInterface
 class ActorCriticIndependent(AgentInterface, ActorCriticInterface):
     """ActorCritic with Linear function approximation
 
-    Attributes:
+    Attributes
     ----------
     label: str
         A description for this particular agent.
@@ -69,8 +69,8 @@ class ActorCriticIndependent(AgentInterface, ActorCriticInterface):
         Uses exponential decay on epis
         seed: int = 0,
 
-    Methods:
-    --------
+    Methods
+    -------
     act(state): Action
         Select an action based on state
 
@@ -79,7 +79,6 @@ class ActorCriticIndependent(AgentInterface, ActorCriticInterface):
 
     update(state, actions, next_reward, next_state): None
         Learns from policy improvement and policy evalution.
-
     """
     fully_observable = False
 
@@ -99,8 +98,8 @@ class ActorCriticIndependent(AgentInterface, ActorCriticInterface):
         # Attributes
         self.n_players = n_players
         self.action_set = action_set
-        self.n_actions = int(np.power(len(action_set), 1 / n_players))
-        self.n_features = n_features // n_players
+        self.n_actions = int(np.round(np.power(len(action_set), 1 / n_players), 0))
+        self.n_features = n_features
 
         # Parameters
         # The feature are state-value function features, i.e,
@@ -140,7 +139,7 @@ class ActorCriticIndependent(AgentInterface, ActorCriticInterface):
         ret = []
         for _n, _s in enumerate(state):
             pi = self._PI(_s, _n)
-            ret.append(choice(5, p=pi.flatten()))
+            ret.append(choice(self.n_actions, p=pi.flatten()))
         return tuple(ret)
 
     def update(
