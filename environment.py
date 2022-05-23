@@ -47,7 +47,9 @@ class Environment(Base):
     @property
     def n_features(self):
         "The number of features"
-        return sum(map(lambda x: x.shape[0], self.observation_space))
+        if self.central:
+            return sum(map(lambda x: x.shape[0], self.observation_space))
+        return self.observation_space[0].shape[0]
 
     def __init__(
         self,
@@ -85,7 +87,6 @@ class Environment(Base):
         next_observations, next_rewards, *_ = super(Environment, self).step(
             onehot(actions)
         )
-
         if self.central:
             # flatten next_observation
             next_observations = [np.concatenate([next_observations]).flatten()]
