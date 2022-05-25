@@ -1,18 +1,18 @@
 """Configuration"""
 ALPHA = 0.5  # ALPHA:
 BETA = 0.3  # BETA:
-TAU = 5.0   # Final TAU
-EXPLORE_EPISODES = 975
-EPISODES = 1000
+TAU = 3.0   # Final TAU
+EXPLORE_EPISODES = 4975
+EPISODES = 5000
+
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
 
-SEED = 0
-BASE_PATH = 'data/16_duo/03_tau05/'
-# BASE_PATH = 'data/12_central_learner/03_tau05'
+SEED = 1
+BASE_PATH = 'data/03_duo_collisions/5000'
 
 N_WORKERS = 6
 N_AGENTS = 2
-AGENT_TYPE = 'ActorCriticCentral'
+AGENT_TYPE = 'ActorCriticIndependent'
 
 PIPELINE_SEEDS = [
     47,

@@ -1,11 +1,5 @@
 #!/usr/bin/env python
-"""Runs (a) train (b) evaluation (c) simulation.
-
-TODO:
------
-* introduce interfaces in the project as types.
-
-"""
+"""Runs (a) train (b) evaluation (c) simulation. """
 from pathlib import Path
 from typing import List, Tuple, Union
 from time import sleep
@@ -317,15 +311,15 @@ if __name__ == "__main__":
     target_dir = Path(get_dir()) / "02"
     with Pool(config.N_WORKERS) as pool:
         results = pool.map(train_w, enumerate(config.PIPELINE_SEEDS))
+    #
+    # results = [*map(train_w, enumerate(config.PIPELINE_SEEDS))]
     train_plot(get_results(results), n=config.N_AGENTS, save_directory_path=target_dir)
     pd.DataFrame(data=get_results(results), columns=config.PIPELINE_SEEDS).to_csv(
         (target_dir / "pipeline-train.csv").as_posix(), sep=","
     )
     pd.DataFrame(
         data=get_results(results), columns=config.PIPELINE_SEEDS
-    ).describe().to_csv(
-        (target_dir / "pipeline-train-summary.csv").as_posix(), sep=","
-    )
+    ).describe().to_csv((target_dir / "pipeline-train-summary.csv").as_posix(), sep=",")
 
     results_k = top_k(results, k=3)
     train_plot(get_results(results_k))

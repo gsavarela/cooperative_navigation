@@ -177,7 +177,7 @@ class NetworkedSpreadScenario(BaseScenario):
         if player.collide:
             for a in world.players:
                 if a != player and self._is_collision(a, player):
-                    rew -= 1
+                    rew -= 2
         return rew
 
     def observation(self, agent: Agent, world: World) -> Observation:
