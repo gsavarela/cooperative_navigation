@@ -81,20 +81,22 @@ def traces(
     actions: List[int],
     x1: List[Array],
     vs: List[float],
+    path: Path
 ) -> None:
-
-    path = Path(config.BASE_PATH) / "{0:02d}".format(config.SEED)
-    actions = [str(PlayerActions(act).name) for act in actions]
+    namedactions = [[str(PlayerActions(act).name) for act in action] for action in actions]
+    nobs = max(x0[0].shape)
+    nplayers = len(actions[0])
 
     # individual dataframes
     x0_df = pd.DataFrame(
-        data=np.vstack(x0), columns=["x0_1", "x0_2", "x0_3", "x0_4", "x0_5", "x0_6"]
+        data=np.vstack(x0), columns=["x0_{0}".format(i) for i in range(1, nobs + 1)]
     )
-    actions_df = pd.DataFrame(data=actions, columns=["actions"])
+    actions_df = pd.DataFrame(
+        data=namedactions, columns=["a{0}".format(i) for i in range(nplayers)]
+    )
     x1_df = pd.DataFrame(
-        data=np.vstack(x1), columns=["x1_1", "x1_2", "x1_3", "x1_4", "x1_5", "x1_6"]
+        data=np.vstack(x1), columns=["x1_{0}".format(i) for i in range(1, nobs + 1)]
     )
-
     vs_df = pd.DataFrame(data=np.vstack(vs), columns=["v(x)"])
 
     # delta dataframe

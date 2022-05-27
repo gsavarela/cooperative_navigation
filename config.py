@@ -2,17 +2,16 @@
 ALPHA = 0.5  # ALPHA:
 BETA = 0.3  # BETA:
 TAU = 5.0   # Final TAU
-EXPLORE_EPISODES = 975
-EPISODES = 1000
+EXPLORE_EPISODES = 9975
+EPISODES = 10000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
 
-SEED = 0
-BASE_PATH = 'data/16_duo/03_tau05/'
-# BASE_PATH = 'data/12_central_learner/03_tau05'
+SEED = 1
+BASE_PATH = 'data/00_duo/01_tau05_10000/'
 
 N_WORKERS = 6
 N_AGENTS = 2
-AGENT_TYPE = 'ActorCriticCentral'
+AGENT_TYPE = 'ActorCriticIndependent'
 
 PIPELINE_SEEDS = [
     47,
@@ -27,22 +26,22 @@ PIPELINE_SEEDS = [
     56,
     57,
     58,
-    59,
-    60,
-    61,
-    62,
-    63,
-    64,
-    65,
-    66,
-    67,
-    68,
-    69,
-    70,
-    71,
-    72,
-    73,
-    74,
-    75,
-    76
+    # 59,
+    # 60,
+    # 61,
+    # 62,
+    # 63,
+    # 64,
+    # 65,
+    # 66,
+    # 67,
+    # 68,
+    # 69,
+    # 70,
+    # 71,
+    # 72,
+    # 73,
+    # 74,
+    # 75,
+    # 76
 ]
