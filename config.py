@@ -11,7 +11,7 @@ BASE_PATH = 'data/00_duo/01_tau05_10000/'
 
 N_WORKERS = 6
 N_AGENTS = 2
-AGENT_TYPE = 'ActorCriticIndependent'
+AGENT_TYPE = 'ActorCriticDistributed'
 
 PIPELINE_SEEDS = [
     47,
