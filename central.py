@@ -83,6 +83,7 @@ class ActorCriticCentral(AgentInterface, ActorCriticInterface):
     """
 
     fully_observable = True
+    communication = False
 
     def __init__(
         self,
@@ -297,7 +298,7 @@ if __name__ == "__main__":
         for _ in trange(100, desc="timesteps"):
 
             # step environment
-            next_obs, next_rewards = env.step(actions)
+            next_obs, next_rewards, _ = env.step(actions)
 
             # actor parameters.
             next_actions = agent.act(next_obs)
@@ -337,7 +338,7 @@ if __name__ == "__main__":
         frames += env.render(mode="rgb_array")  # for saving
 
         # step environment
-        next_obs, next_rewards = env.step(actions)
+        next_obs, next_rewards, _ = env.step(actions)
 
         next_actions = agent.act(next_obs)
 

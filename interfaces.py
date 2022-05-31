@@ -14,6 +14,11 @@ class AgentInterface(abc.ABC):
     def fully_observable() -> bool:
         """Both rewards and the positions of every agent is known"""
 
+    @property
+    @abc.abstractmethod
+    def communication() -> bool:
+        """Agents may communicate during training"""
+
     @abc.abstractmethod
     def act(self, state: Observation) -> Action:
         """Select an action based on state

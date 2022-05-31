@@ -167,7 +167,7 @@ def train(num: int, seed: int) -> Result:
         rewards = []
         for _ in trange(100, desc="timesteps"):
             # step environment
-            next_obs, next_rewards = env.step(actions)
+            next_obs, next_rewards, _ = env.step(actions)
 
             next_actions = agent.act(next_obs)
 
@@ -208,7 +208,7 @@ def rollout(num: int, env: Environment, agent: AgentInterface) -> Rollout:
     for _ in trange(100, desc="timesteps"):
 
         # step environment
-        next_obs, next_rewards = env.step(actions)
+        next_obs, next_rewards, _ = env.step(actions)
 
         next_actions = agent.act(next_obs)
 
@@ -281,7 +281,7 @@ def simulate(
         sleep(0.1)
         frames += env.render(mode="rgb_array")  # for saving
 
-        next_obs, next_rewards = env.step(actions)
+        next_obs, next_rewards, _ = env.step(actions)
 
         next_actions = agent.act(next_obs)
 

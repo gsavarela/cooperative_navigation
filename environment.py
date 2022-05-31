@@ -7,6 +7,7 @@ import simple_spread as ss
 import networked_spread as ns
 
 from common import action_set, onehot, Action, Step
+from consensus import consensus_matrices
 
 
 class Environment(Base):
@@ -28,6 +29,9 @@ class Environment(Base):
 
     central: bool = True
         There is a central entity that observes everything.
+
+    communication: bool = True
+        Agents may exchange information during learning.
 
     See Also:
     ---------
@@ -57,6 +61,7 @@ class Environment(Base):
         scenario: str = "simple_spread",
         seed: int = 0,
         central: bool = True,
+        communication: bool = False,
     ):
         if scenario not in ("simple_spread", "networked_spread"):
             raise ValueError("Invalid scenario: %s" % scenario)
@@ -68,6 +73,7 @@ class Environment(Base):
         self.world = self.scenario.make_world(n, seed)
         self.action_set = action_set(n)
         self.central = central
+        self.communication = communication
 
         super(Environment, self).__init__(
             self.world,
@@ -83,6 +89,9 @@ class Environment(Base):
                 )
             ]
 
+        if self.communication:
+            self.cwms = consensus_matrices(n)
+
     def step(self, actions: Action) -> Step:
         next_observations, next_rewards, *_ = super(Environment, self).step(
             onehot(actions)
@@ -91,4 +100,8 @@ class Environment(Base):
             # flatten next_observation
             next_observations = [np.concatenate([next_observations]).flatten()]
 
-        return next_observations, next_rewards
+        cwm = None
+        if self.communication:
+            cwm = self.cwms[np.random.randint(len(self.cwms))]
+
+        return next_observations, next_rewards, cwm
