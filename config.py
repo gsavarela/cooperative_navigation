@@ -1,17 +1,17 @@
 """Configuration"""
 ALPHA = 0.5  # ALPHA:
 BETA = 0.3  # BETA:
-TAU = 1.0   # Final TAU
-EXPLORE_EPISODES = 495
-EPISODES = 500
+TAU = 5.0   # Final TAU
+EXPLORE_EPISODES = 975
+EPISODES = 1000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
 
 SEED = 1
 BASE_PATH = 'data/test'
 
 N_WORKERS = 6
-N_AGENTS = 3
-AGENT_TYPE = 'ActorCriticIndependent'
+N_AGENTS = 2
+AGENT_TYPE = 'ActorCriticConsensus'
 
 PIPELINE_SEEDS = [
     47,

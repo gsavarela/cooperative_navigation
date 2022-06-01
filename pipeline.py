@@ -17,6 +17,7 @@ import config
 from central import ActorCriticCentral
 from independent_learners import ActorCriticIndependent
 from distributed_learners2 import ActorCriticDistributed
+from consensus_learners import ActorCriticConsensus
 from interfaces import AgentInterface
 
 from environment import Environment
@@ -39,6 +40,7 @@ PATHS = {
     "ActorCriticCentral": "00_central",
     "ActorCriticDistributed": "02_distributed_learners",
     "ActorCriticIndependent": "02_independent_learners",
+    "ActorCriticConsensus": "03_consensus_learners",
 }
 
 
@@ -137,6 +139,7 @@ def train(num: int, seed: int) -> Result:
         scenario="networked_spread",
         seed=seed,
         central=Agent.fully_observable,
+        communication=Agent.communication,
     )
 
     # Instanciates the actor critic agent.
@@ -167,11 +170,13 @@ def train(num: int, seed: int) -> Result:
         rewards = []
         for _ in trange(100, desc="timesteps"):
             # step environment
-            next_obs, next_rewards, _ = env.step(actions)
+            next_obs, next_rewards, cwm = env.step(actions)
 
             next_actions = agent.act(next_obs)
 
             tr = (obs, actions, next_rewards, next_obs, next_actions)
+            if agent.communication:
+                tr += (cwm,)
 
             agent.update(*tr)
 
