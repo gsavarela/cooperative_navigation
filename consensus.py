@@ -25,7 +25,8 @@ from scipy.sparse import csr_matrix
 
 from common import Array, List
 
-def consensus_matrices(n_nodes: int, cm_type: str = 'metropolis') -> List[Array]:
+
+def consensus_matrices(n_nodes: int, cm_type: str = "metropolis") -> List[Array]:
     """Generates a list of consensus matrices
 
     Parameters
@@ -41,18 +42,21 @@ def consensus_matrices(n_nodes: int, cm_type: str = 'metropolis') -> List[Array]
     * cwms: List[Array]
         A list containing consensus weights matrices
     """
-    if cm_type not in ('metropolis', 'normalized_laplacian', 'laplacian'):
-        raise ValueError('%s invalid' % cm_type)
+    if n_nodes == 1:
+        raise ValueError('%s invalid' % str(n_nodes))
+    if cm_type not in ("metropolis", "normalized_laplacian", "laplacian"):
+        raise ValueError("%s invalid" % cm_type)
     else:
-        fn = eval('%s_weights_matrix' % cm_type)
+        fn = eval("%s_weights_matrix" % cm_type)
 
     # Fully connected and bi-directional channels.
     cwms = []
     max_edges = max(n_nodes * (n_nodes - 1) // 4, 1)
     for n_edges in range(max_edges + 1):  # inclusive
-        am = adjacency_matrix(n_nodes, n_edges)
+        am = random_adjacency_matrix(n_nodes, n_edges)
         cwms.append(fn(am))
     return cwms
+
 
 def metropolis_weights_matrix(am: Array) -> Array:
     """Consensus matrix[3] from an adjacency matrix
@@ -132,8 +136,10 @@ def laplacian_weights_matrix(am: Array, fast: bool = True) -> Array:
     lwm = eye - alpha * laplacian
     return np.array(lwm)
 
-def adjacency_matrix(n_nodes: int, n_edges: int) -> Array:
-    """Adjacency matrix
+
+def random_adjacency_matrix(n_nodes: int, n_edges: int) -> Array:
+    """Randomly produce an adjacency matrix
+
                              A[i, i] = 0
                             /
      A is adjacency matrix < --->  A[i, j] = 1 iff i, j are neighbors
@@ -147,9 +153,12 @@ def adjacency_matrix(n_nodes: int, n_edges: int) -> Array:
 
     Returns
     -------
-    * am: Array
+    * ram: Array
         A two dimension array representing an adjacency matrix.
     """
+    if n_edges == 0:
+        return np.zeros((n_nodes, n_nodes))
+
     full_edge_list = [(i, j) for i in range(n_nodes - 1) for j in range(i + 1, n_nodes)]
 
     n_choices = min(len(full_edge_list), n_edges)
@@ -158,9 +167,9 @@ def adjacency_matrix(n_nodes: int, n_edges: int) -> Array:
     edge_list = [full_edge_list[i] for i in sorted(edge_ids)]
 
     data = (np.ones(len(edge_list), dtype=int), zip(*edge_list))
-    am = csr_matrix(data, dtype=int, shape=(n_nodes, n_nodes)).toarray()
-    am = am + am.T
-    return am
+    ram = csr_matrix(data, dtype=int, shape=(n_nodes, n_nodes)).toarray()
+    ram = ram + ram.T
+    return ram
 
 
 def main(n_nodes: int = 5, target: int = 3):
@@ -176,7 +185,7 @@ def main(n_nodes: int = 5, target: int = 3):
 
     n_edges = 2 * (n_nodes - 1)
 
-    adjacency = adjacency_matrix(n_nodes, n_edges)
+    adjacency = random_adjacency_matrix(n_nodes, n_edges)
 
     print("ADJACENCY:")
     print(adjacency)
