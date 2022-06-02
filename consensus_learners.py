@@ -67,6 +67,9 @@ class ActorCriticConsensus(AgentInterface, ActorCriticInterface):
     beta: float = 0.7,
         The learning rate for policy parametrization.
 
+    zeta: float = 0.1,
+        The weighting on the global average.
+
     explore_episodes: int = 100,
         The number of episodes to explore. The temperature
         falls linearly with the number of explore_episodes.
@@ -100,6 +103,7 @@ class ActorCriticConsensus(AgentInterface, ActorCriticInterface):
         action_set: ActionSet,
         alpha: float = 0.9,
         beta: float = 0.7,
+        zeta: float = 0.1,
         explore_episodes: int = 100,
         explore: bool = False,
         decay: bool = False,
@@ -117,7 +121,7 @@ class ActorCriticConsensus(AgentInterface, ActorCriticInterface):
         # the generalize w.r.t the actions.
         self.omega = np.zeros((self.n_players, self.n_features, len(self.action_set)))
         self.theta = np.zeros((self.n_players, self.n_features, self.n_actions))
-        self.zeta = 0.1
+        self.zeta = zeta
         self.mu = np.zeros(self.n_players)
 
         # Loop control
@@ -210,7 +214,6 @@ class ActorCriticConsensus(AgentInterface, ActorCriticInterface):
 
         # Those are equivalent.
         self.omega = np.einsum('ij, jmk -> imk', cwm, _o1)
-        
 
     def _psi(self, state: Array, action: int, n: int) -> Array:
         _X = self._X(state)
@@ -320,6 +323,7 @@ if __name__ == "__main__":
         action_set=env.action_set,
         alpha=config.ALPHA,
         beta=config.BETA,
+        zeta=config.ZETA,
         explore_episodes=config.EXPLORE_EPISODES,
         explore=config.EXPLORE,
         decay=False,

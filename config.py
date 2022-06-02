@@ -2,16 +2,17 @@
 ALPHA = 0.5  # ALPHA:
 BETA = 0.3  # BETA:
 TAU = 5.0   # Final TAU
-EXPLORE_EPISODES = 975
-EPISODES = 1000
+ZETA = 0.1
+EXPLORE_EPISODES = 5000
+EPISODES = 8000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
 
 SEED = 1
-BASE_PATH = 'data/test'
+BASE_PATH = 'data/00_duo_hyperparameter_search'
 
 N_WORKERS = 6
 N_AGENTS = 2
-AGENT_TYPE = 'ActorCriticConsensus'
+AGENT_TYPE = 'ActorCriticCentral'
 
 PIPELINE_SEEDS = [
     47,
@@ -26,22 +27,22 @@ PIPELINE_SEEDS = [
     56,
     57,
     58,
-    # 59,
-    # 60,
-    # 61,
-    # 62,
-    # 63,
-    # 64,
-    # 65,
-    # 66,
-    # 67,
-    # 68,
-    # 69,
-    # 70,
-    # 71,
-    # 72,
-    # 73,
-    # 74,
-    # 75,
-    # 76
+    59,
+    60,
+    61,
+    62,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76
 ]

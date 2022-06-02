@@ -61,6 +61,9 @@ class ActorCriticDistributed(AgentInterface, ActorCriticInterface):
     beta: float = 0.7,
         The learning rate for policy parametrization.
 
+    zeta: float = 0.1,
+        The weighting on the global average.
+
     explore_episodes: int = 100,
         The number of episodes to explore. The temperature
         falls linearly with the number of explore_episodes.
@@ -95,6 +98,7 @@ class ActorCriticDistributed(AgentInterface, ActorCriticInterface):
         action_set: ActionSet,
         alpha: float = 0.9,
         beta: float = 0.7,
+        zeta: float = 0.1,
         explore_episodes: int = 100,
         explore: bool = False,
         decay: bool = False,
@@ -112,7 +116,7 @@ class ActorCriticDistributed(AgentInterface, ActorCriticInterface):
         # the generalize w.r.t the actions.
         self.omega = np.zeros(self.n_features)
         self.theta = np.zeros((self.n_players, self.n_features, self.n_actions))
-        self.zeta = 0.1
+        self.zeta = zeta
         self.mu = 0
 
         # Loop control
@@ -279,6 +283,7 @@ if __name__ == "__main__":
         action_set=env.action_set,
         alpha=config.ALPHA,
         beta=config.BETA,
+        zeta=config.ZETA,
         explore_episodes=config.EXPLORE_EPISODES,
         explore=config.EXPLORE,
         decay=False,

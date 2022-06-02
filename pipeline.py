@@ -1,11 +1,5 @@
 #!/usr/bin/env python
-"""Runs (a) train (b) evaluation (c) simulation.
-
-TODO:
------
-* introduce interfaces in the project as types.
-
-"""
+"""Runs (a) train (b) evaluation (c) simulation."""
 from pathlib import Path
 from typing import List, Tuple, Union
 from time import sleep
@@ -26,6 +20,7 @@ from plots import train_plot, rollout_plot
 from tqdm.auto import trange
 from plots import save_frames_as_gif
 from plots import metrics_plot
+from log import log_traces
 
 
 # Pipeline Types
@@ -38,7 +33,7 @@ Rollouts = Tuple[Rollout]
 RuR = Union[Results, Rollouts]
 PATHS = {
     "ActorCriticCentral": "00_central",
-    "ActorCriticDistributed": "02_distributed_learners",
+    "ActorCriticDistributed": "01_distributed_learners2",
     "ActorCriticIndependent": "02_independent_learners",
     "ActorCriticConsensus": "03_consensus_learners",
 }
@@ -149,6 +144,7 @@ def train(num: int, seed: int) -> Result:
         action_set=env.action_set,
         alpha=config.ALPHA,
         beta=config.BETA,
+        zeta=config.ZETA,
         explore_episodes=config.EXPLORE_EPISODES,
         explore=config.EXPLORE,
         decay=False,
@@ -313,24 +309,45 @@ def simulate(
         )
 
 
+def save_traces(results: Results, path: Path):
+    """Convert every result in the list to a dataframe
+
+    Parameters
+    ----------
+    results: Results
+        The list of tuples (num, env, agent, traces, res)
+    path: Path
+        The saving path
+
+    """
+    for num, _, agent, traces, _ in results:
+        seed = config.PIPELINE_SEEDS[num]
+        x0, a0, r1, x1, _ = zip(*traces)
+        if agent.fully_observable:
+            x0 = [*map(np.hstack, x0)]
+            x1 = [*map(np.hstack, x1)]
+            r1 = [*map(np.mean, r1)]
+        log_traces(seed, x0, a0, r1, x1, target_dir)
+
 if __name__ == "__main__":
     from operator import itemgetter
     from multiprocessing.pool import Pool
     from pathlib import Path
     import shutil
 
+    # Make directory here.
     target_dir = Path(get_dir()) / "02"
     with Pool(config.N_WORKERS) as pool:
         results = pool.map(train_w, enumerate(config.PIPELINE_SEEDS))
+
     train_plot(get_results(results), n=config.N_AGENTS, save_directory_path=target_dir)
+
     pd.DataFrame(data=get_results(results), columns=config.PIPELINE_SEEDS).to_csv(
         (target_dir / "pipeline-train.csv").as_posix(), sep=","
     )
     pd.DataFrame(
         data=get_results(results), columns=config.PIPELINE_SEEDS
-    ).describe().to_csv(
-        (target_dir / "pipeline-train-summary.csv").as_posix(), sep=","
-    )
+    ).describe().to_csv((target_dir / "pipeline-train-summary.csv").as_posix(), sep=",")
 
     results_k = top_k(results, k=3)
     train_plot(get_results(results_k))

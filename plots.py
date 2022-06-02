@@ -136,6 +136,7 @@ def metrics_plot(
     rollouts: bool = True,
     episodes: List[int] = [],
     smooth: bool = False,
+    show_plot: bool = False,
 ) -> None:
     """Plots the `reward`, `|omega|` or any other metric for diagnostics.
 
@@ -157,6 +158,9 @@ def metrics_plot(
         If not provided is considered to be a single episode
     smooth: bool = False
         Provides a trend curve which is somewhat heavy to compute.
+    show_plot: bool = False
+        Shows the plot stopping code execution
+
     """
 
     metrics = np.array(metrics)
@@ -199,7 +203,8 @@ def metrics_plot(
     plt.legend(loc=4)
     plt.suptitle(suptitle)
     _savefig(suptitle, save_directory_path)
-    plt.show()
+    if show_plot:
+        plt.show()
 
 
 def returns_plot(
@@ -208,6 +213,7 @@ def returns_plot(
     suptitle,
     save_directory_path: Path = None,
     smooth: bool = False,
+    show_plot: bool = False,
 ) -> None:
     """Plots the `reward`, `|omega|` or any other metric for diagnostics.
 
@@ -223,6 +229,8 @@ def returns_plot(
         Saves the reward plot on a pre-defined path.
     smooth: bool = False
         Provides a trend curve which is somewhat heavy to compute.
+    show_plot: bool = False
+        Shows the plot stopping code execution
     """
 
     rewards = np.array(rewards)
@@ -248,11 +256,16 @@ def returns_plot(
     plt.ylabel("Average Reward Return")
     plt.suptitle(suptitle)
     _savefig(suptitle, save_directory_path)
-    plt.show()
+    if show_plot:
+        plt.show()
 
 
 def train_plot(
-    results: Array, n: int = 1, save_directory_path: Path = None, smooth: bool = False
+    results: Array,
+    n: int = 1,
+    save_directory_path: Path = None,
+    smooth: bool = False,
+    show_plot: bool = False,
 ) -> None:
     """Plots the results from a training run.
 
@@ -266,6 +279,8 @@ def train_plot(
         The number of agents
     smooth: bool = False
         Provides a trend curve which is somewhat heavy to compute.
+    show_plot: bool = False
+        Shows the plot stopping code execution
     """
     _, M = results.shape
     Y = np.mean(results, axis=1)
@@ -289,11 +304,15 @@ def train_plot(
     plt.xlabel("Episode")
     plt.ylabel("Average Reward Return")
     _savefig("Train Pipeline (M=%s)" % M, save_directory_path)
-    plt.show()
+
+    if show_plot:
+        plt.show()
 
 
 def rollout_plot(
-    results: Array, n: int = 1, save_directory_path: Path = None, smooth: bool = False
+    results: Array, n: int = 1, save_directory_path: Path = None, smooth: bool = False,
+
+    show_plot: bool = False,
 ) -> None:
     """Plots the results from a rollout run.
 
@@ -307,6 +326,8 @@ def rollout_plot(
         The number of agents
     smooth: bool = False
         Provides a trend curve which is somewhat heavy to compute.
+    show_plot: bool = False
+        Shows the plot stopping code execution
     """
     _, M = results.shape
     Y = np.mean(results, axis=1)
@@ -330,10 +351,13 @@ def rollout_plot(
     plt.xlabel("Timesteps")
     plt.ylabel("Average Reward")
     _savefig("Train Rollout (M=%s)" % M, save_directory_path)
-    plt.show()
+
+    if show_plot:
+        plt.show()
 
 
-def leader_plot(root_directory_path: Path, experiment_id: int, plot_type: str) -> None:
+def leader_plot(root_directory_path: Path, experiment_id: int, plot_type: str, show_plot: bool = False) -> None:
+    
     """Compares the plots of different agents.
 
     Parameters
@@ -346,6 +370,9 @@ def leader_plot(root_directory_path: Path, experiment_id: int, plot_type: str) -
 
     plot_type: str
         The name to be search on the key 'test', 'train', 'evaluation_rollout'
+
+    show_plot: bool = False
+        Shows the plot stopping code execution
     """
     pattern = "*/{0:02d}/{1}*.csv".format(experiment_id, plot_type)
     print([*root_directory_path.glob(pattern)])
@@ -353,7 +380,7 @@ def leader_plot(root_directory_path: Path, experiment_id: int, plot_type: str) -
         _label = _p.parent.parent.stem
         _df = pd.read_csv(_p.as_posix(), sep=",")
         _X, _Y = zip(*_df["1"].items())
-        if plot_type in ('train', 'test'):
+        if plot_type in ("train", "test"):
             plt.plot(_X, np.cumsum(_Y), c="C{0}".format(_n), label=_label)
         else:
             plt.plot(_X, _Y, c="C{0}".format(_n), label=_label)
@@ -370,7 +397,8 @@ def leader_plot(root_directory_path: Path, experiment_id: int, plot_type: str) -
         plot_type, experiment_id
     )
     plt.savefig(file_path.as_posix())
-    plt.show()
+    if show_plot:
+        plt.show()
 
 
 def test_save_frames_as_gif() -> None:
@@ -396,8 +424,8 @@ def test_leader_plot(directory_path: Path = Path("./data/01_duo/1000")):
     """Runs an example of leader_plot comparing"""
 
     experiment_id = 1
-    leader_plot(directory_path, experiment_id, plot_type='train')
-    leader_plot(directory_path, experiment_id, plot_type='test')
+    leader_plot(directory_path, experiment_id, plot_type="train")
+    leader_plot(directory_path, experiment_id, plot_type="test")
 
 
 if __name__ == "__main__":

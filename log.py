@@ -76,13 +76,36 @@ def actor(
     df.to_csv(path / "pi-seed{0:02d}.csv".format(config.SEED))
 
 
-def traces(
+def log_traces(
+    seed: int,
     x0: List[Array],
     actions: List[int],
+    rewards: List[float],
     x1: List[Array],
-    vs: List[float],
     path: Path
 ) -> None:
+    """Saves traces -- The list of tuples (s, a, r, s')
+
+    Parameters
+    ----------
+    seed: int
+        Regulates the random number generator.
+
+    x0: List[Array]
+        The observations used to select the decision.
+
+    actions: List[int]
+        The actions
+
+    rewards: List[float]
+        The rewards
+
+    x1: List[Array]
+        The observations used to select the decision.
+
+    path: Path
+        The saving path
+    """
     namedactions = [[str(PlayerActions(act).name) for act in action] for action in actions]
     nobs = max(x0[0].shape)
     nplayers = len(actions[0])
@@ -97,9 +120,9 @@ def traces(
     x1_df = pd.DataFrame(
         data=np.vstack(x1), columns=["x1_{0}".format(i) for i in range(1, nobs + 1)]
     )
-    vs_df = pd.DataFrame(data=np.vstack(vs), columns=["v(x)"])
+    rewards_df = pd.DataFrame(data=np.vstack(rewards), columns=["rewards"])
 
     # delta dataframe
-    dataframes = [x0_df, actions_df, x1_df, vs_df]
+    dataframes = [x0_df, actions_df, rewards_df, x1_df]
     df = pd.concat(dataframes, axis=1)
-    df.to_csv(path / "traces-seed{0:02d}.csv".format(config.SEED))
+    df.to_csv(path / "traces-seed{0:02d}.csv".format(seed))
