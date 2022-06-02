@@ -1,14 +1,14 @@
 """Configuration"""
-ALPHA = 0.5  # ALPHA:
-BETA = 0.3  # BETA:
-TAU = 5.0   # Final TAU
-ZETA = 0.1
+ALPHA = 0.5
+BETA = 0.3
+TAU = 5.0
+ZETA = 0.10
 EXPLORE_EPISODES = 5000
 EPISODES = 8000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
 
 SEED = 1
-BASE_PATH = 'data/00_duo_hyperparameter_search'
+BASE_PATH = 'data/00_duo_hyperparameter_search/08_zeta005'
 
 N_WORKERS = 6
 N_AGENTS = 2
