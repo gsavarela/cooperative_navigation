@@ -75,6 +75,7 @@ class Environment(Base):
         self.central = central
         self.communication = communication
 
+
         super(Environment, self).__init__(
             self.world,
             self.scenario.reset_world,
@@ -105,3 +106,8 @@ class Environment(Base):
             cwm = self.cwms[np.random.randint(len(self.cwms))]
 
         return next_observations, next_rewards, cwm
+
+    def n_collisions(self) -> int:
+        return sum([
+            int(self.scenario._is_collision(i, j))
+            for i, j in zip(self.world.players[:-1], self.world.players[1:])])

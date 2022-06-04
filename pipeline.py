@@ -5,6 +5,7 @@ from typing import List, Tuple, Union
 from time import sleep
 import numpy as np
 import pandas as pd
+from collections import defaultdict
 
 
 import config
@@ -153,6 +154,7 @@ def train(num: int, seed: int) -> Result:
     first = True
     res = []
     traces = []
+    info = defaultdict(list)
     # Starts the training
     for _ in trange(config.EPISODES, desc="episodes"):
         # execution loop
@@ -165,6 +167,8 @@ def train(num: int, seed: int) -> Result:
         first = False
         rewards = []
         for _ in trange(100, desc="timesteps"):
+            info['couplings'].append(len(actions) - len(set(actions)))
+
             # step environment
             next_obs, next_rewards, cwm = env.step(actions)
 
@@ -180,11 +184,12 @@ def train(num: int, seed: int) -> Result:
             actions = next_actions
             rewards.append(np.mean(next_rewards))
             traces.append(tr)
+            info['collisions'].append(env.n_collisions())
         res.append(np.sum(rewards))
     # Result is a column array
     res = np.array(res)[:, None]
 
-    return (num, env, agent, traces, res)
+    return (num, env, agent, traces, res, info)
 
 
 def rollout(num: int, env: Environment, agent: AgentInterface) -> Rollout:
@@ -206,7 +211,9 @@ def rollout(num: int, env: Environment, agent: AgentInterface) -> Rollout:
     agent.explore = False
     actions = agent.act(obs)
     res = []
+    info = defaultdict(list)
     for _ in trange(100, desc="timesteps"):
+        info['couplings'].append(len(actions) - len(set(actions)))
 
         # step environment
         next_obs, next_rewards, _ = env.step(actions)
@@ -217,9 +224,10 @@ def rollout(num: int, env: Environment, agent: AgentInterface) -> Rollout:
         actions = next_actions
         res.append(np.mean(next_rewards))
 
+        info['collisions'].append(env.n_collisions())
     # Result is a column array
     res = np.array(res)[:, None]
-    return (num, res)
+    return (num, res, info)
 
 
 def get_results(tuples_list: RuR) -> Array:
@@ -235,7 +243,7 @@ def get_results(tuples_list: RuR) -> Array:
     Returns or Rewards: Array
         The time series of Returns (Results) or Rewards (Rollouts)
     """
-    return np.hstack([*map(itemgetter(-1), tuples_list)])
+    return np.hstack([*map(itemgetter(-2), tuples_list)])
 
 
 def top_k(tuples_list: RuR, k: int = 5) -> RuR:
@@ -253,13 +261,13 @@ def top_k(tuples_list: RuR, k: int = 5) -> RuR:
     """
 
     def fn(x):
-        return np.mean(x[-1][50:])
+        return np.mean(x[-2][50:])
 
     return sorted(tuples_list, key=fn, reverse=True)[:k]
 
 
 def simulate(
-    num: int, env: Environment, agent: AgentInterface, save_directory_path: Path = None
+        num: int, env: Environment, agent: AgentInterface, save_directory_path: Path = None, render: bool=False
 ) -> None:
     """Renders the experiment for 100 timesteps.
 
@@ -271,6 +279,8 @@ def simulate(
         The environment used to run.
     agent: AgentInterface
         The reinforcement learning agent (controls one or more players).
+
+    render: Bool, False
     """
     obs = env.reset()
     agent.reset()
@@ -279,8 +289,9 @@ def simulate(
     frames = []
     rewards = []
     for _ in trange(100, desc="timesteps"):
-        sleep(0.1)
-        frames += env.render(mode="rgb_array")  # for saving
+        if render:
+            sleep(0.1)
+            frames += env.render(mode="rgb_array")  # for saving
 
         next_obs, next_rewards, _ = env.step(actions)
 
@@ -302,11 +313,12 @@ def simulate(
             ("{0}/evaluation_rollout-num{1:02d}.csv".format(save_directory_path, num)),
             sep=",",
         )
-        save_frames_as_gif(
-            frames,
-            dir_path=save_directory_path,
-            filename="simulation-pipeline-best.gif",
-        )
+        if render:
+            save_frames_as_gif(
+                frames,
+                dir_path=save_directory_path,
+                filename="simulation-pipeline-best.gif",
+            )
 
 
 def save_traces(results: Results, path: Path):
@@ -320,7 +332,7 @@ def save_traces(results: Results, path: Path):
         The saving path
 
     """
-    for num, _, agent, traces, _ in results:
+    for num, _, agent, traces, _, _ in results:
         seed = config.PIPELINE_SEEDS[num]
         x0, a0, r1, x1, _ = zip(*traces)
         if agent.fully_observable:
@@ -349,12 +361,27 @@ if __name__ == "__main__":
         data=get_results(results), columns=config.PIPELINE_SEEDS
     ).describe().to_csv((target_dir / "pipeline-train-summary.csv").as_posix(), sep=",")
 
+    # Counts the number of times the
+    # same action was selected by both agents.
+    couplings = np.vstack([res[-1]['couplings'] for res in results]).T
+    pd.DataFrame(data=couplings, columns=config.PIPELINE_SEEDS).to_csv(
+        (target_dir / "pipeline-train-couplings.csv").as_posix(), sep=","
+    )
+
+    # Counts the number of times the
+    # agents collided on a single timestep
+    collisions = np.vstack([res[-1]['collisions'] for res in results]).T
+    pd.DataFrame(data=collisions, columns=config.PIPELINE_SEEDS).to_csv(
+        (target_dir / "pipeline-train-collisions.csv").as_posix(), sep=","
+    )
+
     results_k = top_k(results, k=3)
     train_plot(get_results(results_k))
     pd.DataFrame(
         data=get_results(results_k),
         columns=[config.PIPELINE_SEEDS[rok[0]] for rok in results_k],
     ).to_csv((target_dir / "pipeline-results-best.csv").as_posix(), sep=",")
+
 
     # Rollouts
     rollouts = [*map(rollout_w, results)]
@@ -369,6 +396,19 @@ if __name__ == "__main__":
         data=get_results(rollouts), columns=config.PIPELINE_SEEDS
     ).describe().to_csv(
         (target_dir / "pipeline-rollouts-summary.csv").as_posix(), sep=","
+    )
+    # Counts the number of times the
+    # same action was selected by both agents.
+    couplings = np.vstack([res[-1]['couplings'] for res in rollouts]).T
+    pd.DataFrame(data=couplings, columns=config.PIPELINE_SEEDS).to_csv(
+        (target_dir / "pipeline-rollouts-couplings.csv").as_posix(), sep=","
+    )
+
+    # Counts the number of times the
+    # agents collided on a single timestep
+    collisions = np.vstack([res[-1]['collisions'] for res in rollouts]).T
+    pd.DataFrame(data=collisions, columns=config.PIPELINE_SEEDS).to_csv(
+        (target_dir / "pipeline-rollouts-collisions.csv").as_posix(), sep=","
     )
     # Rollouts plot -- K Best runs.
     rollouts_k = [
