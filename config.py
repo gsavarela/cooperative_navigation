@@ -1,14 +1,15 @@
 """Configuration"""
-ALPHA = 0.1  # ALPHA:
-BETA = 0.05  # BETA:
-TAU = 10.0   # Final TAU
+ALPHA = 0.5  # ALPHA:
+BETA = 0.3  # BETA:
+TAU = 5.0   # Final TAU
 ZETA = 0.01
-EXPLORE_EPISODES = 8000
-EPISODES = 16000
+EXPLORE_EPISODES = 9000
+EPISODES = 10000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
 
-SEED = 1
-BASE_PATH = 'data/00_duo_hyperparameter_search/10_best_combination_double_runs'
+SEED = 0
+BASE_PATH = 'data/02_duo_collisions_and_couplings'
+
 N_WORKERS = 6
 N_AGENTS = 2
 AGENT_TYPE = 'ActorCriticCentral'
