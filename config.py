@@ -1,18 +1,19 @@
 """Configuration"""
-ALPHA = 0.5  # ALPHA:
-BETA = 0.3  # BETA:
+ALPHA = 0.05  # ALPHA:
+BETA = 0.03  # BETA:
 TAU = 5.0   # Final TAU
 ZETA = 0.01
-EXPLORE_EPISODES = 9000
-EPISODES = 10000
+EXPLORE_EPISODES = 2500
+EPISODES = 7500
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
+CONSENSUS_MATRIX_TYPE = 'laplacian'
 
-SEED = 0
-BASE_PATH = 'data/02_duo_collisions_and_couplings'
+SEED = 1
+BASE_PATH = 'data/04_duo_consensus_learners/02_laplacian'
 
 N_WORKERS = 6
 N_AGENTS = 2
-AGENT_TYPE = 'ActorCriticCentral'
+AGENT_TYPE = 'ActorCriticConsensus'
 
 PIPELINE_SEEDS = [
     47,

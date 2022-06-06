@@ -18,6 +18,8 @@ Reference
   "Distributed Average Consensus with Time-Varying Metropolis Weights"
 
 """
+from itertools import combinations
+from os import wait
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -26,7 +28,7 @@ from scipy.sparse import csr_matrix
 from common import Array, List
 
 
-def consensus_matrices(n_nodes: int, cm_type: str = "metropolis") -> List[Array]:
+def consensus_matrices(n_nodes: int, cm_type: str = "metropolis", use_star: bool = False) -> List[Array]:
     """Generates a list of consensus matrices
 
     Parameters
@@ -37,13 +39,16 @@ def consensus_matrices(n_nodes: int, cm_type: str = "metropolis") -> List[Array]
     * cm_type: str = 'metropolis'
         A string with the algorithm for consensus.
 
+    * use_star: bool = False
+        If True will use fully connected matrice A = 1 - I
+
     Returns
     -------
     * cwms: List[Array]
         A list containing consensus weights matrices
     """
     if n_nodes == 1:
-        raise ValueError('%s invalid' % str(n_nodes))
+        raise ValueError("%s invalid" % str(n_nodes))
     if cm_type not in ("metropolis", "normalized_laplacian", "laplacian"):
         raise ValueError("%s invalid" % cm_type)
     else:
@@ -51,10 +56,13 @@ def consensus_matrices(n_nodes: int, cm_type: str = "metropolis") -> List[Array]
 
     # Fully connected and bi-directional channels.
     cwms = []
-    max_edges = max(n_nodes * (n_nodes - 1) // 4, 1)
-    for n_edges in range(max_edges + 1):  # inclusive
-        am = random_adjacency_matrix(n_nodes, n_edges)
-        cwms.append(fn(am))
+    if use_star:
+        cwms.append(fn(np.ones((n_nodes, n_nodes), dtype=int) - np.eye(n_nodes)))
+    else:
+        max_edges = n_nodes * (n_nodes - 1) // 2
+        for n_edges in range(max_edges + 1):  # inclusive
+            ams = adjacency_matrices(n_nodes, n_edges)
+            cwms += map(fn, ams)
     return cwms
 
 
@@ -170,6 +178,41 @@ def random_adjacency_matrix(n_nodes: int, n_edges: int) -> Array:
     ram = csr_matrix(data, dtype=int, shape=(n_nodes, n_nodes)).toarray()
     ram = ram + ram.T
     return ram
+
+
+def adjacency_matrices(n_nodes: int, n_edges: int) -> Array:
+    """Produce all adjacency matrices with n_edges
+
+                             A[i, i] = 0
+                            /
+     A is adjacency matrix < --->  A[i, j] = 1 iff i, j are neighbors
+                            \
+                            A[i, j] = 0 otherwise
+
+    Parameters
+    ----------
+    n_nodes: int
+    n_edges: int
+
+    Returns
+    -------
+    * ams: Array
+        A list of two dimension array representing an adjacency matrix.
+    """
+    if n_edges == 0:
+        return [np.zeros((n_nodes, n_nodes))]
+
+    full_edge_list = [(i, j) for i in range(n_nodes - 1) for j in range(i + 1, n_nodes)]
+    ones = np.ones(n_edges, dtype=int)
+
+    ams = []
+    for edge_set in combinations(full_edge_list, n_edges):
+        am = csr_matrix(
+            (ones, zip(*edge_set)), dtype=int, shape=(n_nodes, n_nodes)
+        ).toarray()
+        ams.append(am + am.T)
+
+    return ams
 
 
 def main(n_nodes: int = 5, target: int = 3):

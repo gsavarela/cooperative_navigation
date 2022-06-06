@@ -33,6 +33,10 @@ from common import softmax
 from interfaces import AgentInterface, ActorCriticInterface
 
 
+def clip(x):
+    return np.clip(x, -1, 1)
+
+
 class ActorCriticConsensus(AgentInterface, ActorCriticInterface):
     """Consensus actor critic with Linear function approximation
 
@@ -93,6 +97,7 @@ class ActorCriticConsensus(AgentInterface, ActorCriticInterface):
         Learns from policy improvement and policy evalution.
 
     """
+
     fully_observable = True
     communication = True
 
@@ -195,25 +200,20 @@ class ActorCriticConsensus(AgentInterface, ActorCriticInterface):
             _a0n = actions[_n]
 
             # Computes TD(0) Error.
-            delta = np.clip(
-                np.mean(next_rewards[_n])
-                - self.mu[_n]
-                + (_s1 @ self.omega[_n, :, _a1] - _s0 @ self.omega[_n, :, _a0]),
-                -1,
-                1,
+            delta = clip(
+                (next_rewards[_n] - self.mu[_n]) +
+                (_s1 @ self.omega[_n, :, _a1] - _s0 @ self.omega[_n, :, _a0]),
             )
             # Critic before consensus
-            _o1[_n, :, _a0] = np.clip(_o1[_n, :, _a0] + self.alpha * delta * _s0, -1, 1)
+            _o1[_n, :, _a0] = clip(_o1[_n, :, _a0] + self.alpha * delta * _s0)
 
             # Actor
             self.theta[_n] += (
                 self.beta * self._A(_s0, _a0, _n) * self._psi(_s0, _a0n, _n)
             )
 
-            self.mu[_n] += self.zeta * delta
-
-        # Those are equivalent.
-        self.omega = np.einsum('ij, jmk -> imk', cwm, _o1)
+            self.mu[_n] = (1 - self.zeta) * self.mu[_n] + self.zeta * next_rewards[_n]
+        self.omega = np.einsum("ij, jmk -> imk", cwm, _o1)
 
     def _psi(self, state: Array, action: int, n: int) -> Array:
         _X = self._X(state)
@@ -237,7 +237,7 @@ class ActorCriticConsensus(AgentInterface, ActorCriticInterface):
         return ret
 
     def _A(self, state: Array, action: int, n: int) -> Array:
-        _qx = (state @ self.omega[n, :, action])
+        _qx = state @ self.omega[n, :, action]
 
         actions = list(self.action_set[action])
         _pi = self._PI(state, n)
@@ -310,12 +310,14 @@ if __name__ == "__main__":
         pd.DataFrame(data=data.round(2)).to_csv(file_path.as_posix(), sep=",")
 
     seed = config.SEED
+    import ipdb; ipdb.set_trace()
     env = Environment(
         n=config.N_AGENTS,
         scenario="networked_spread",
         seed=seed,
         central=ActorCriticConsensus.fully_observable,
-        communication=ActorCriticConsensus.communication
+        communication=ActorCriticConsensus.communication,
+        cm_type=config.CONSENSUS_MATRIX_TYPE
     )
     agent = ActorCriticConsensus(
         n_players=config.N_AGENTS,

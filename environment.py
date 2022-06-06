@@ -33,6 +33,9 @@ class Environment(Base):
     communication: bool = True
         Agents may exchange information during learning.
 
+    cm_type: str = 'metropolis'
+        The consensus matrix type (valid only communication=True).
+
     See Also:
     ---------
     Base.n : int
@@ -62,6 +65,7 @@ class Environment(Base):
         seed: int = 0,
         central: bool = True,
         communication: bool = False,
+        cm_type: str = 'metropolis'
     ):
         if scenario not in ("simple_spread", "networked_spread"):
             raise ValueError("Invalid scenario: %s" % scenario)
@@ -91,7 +95,9 @@ class Environment(Base):
             ]
 
         if self.communication:
-            self.cwms = consensus_matrices(n)
+            if cm_type not in ('metropolis', 'normalized_laplacian', 'laplacian'):
+                raise ValueError('Invalid Consensus Matrix %s' % (cm_type))
+            self.cwms = consensus_matrices(n, cm_type=cm_type)
 
     def step(self, actions: Action) -> Step:
         next_observations, next_rewards, *_ = super(Environment, self).step(

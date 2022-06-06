@@ -132,6 +132,7 @@ def train(num: int, seed: int) -> Result:
         seed=seed,
         central=Agent.fully_observable,
         communication=Agent.communication,
+        cm_type=config.CONSENSUS_MATRIX_TYPE
     )
 
     # Instanciates the actor critic agent.
@@ -416,6 +417,6 @@ if __name__ == "__main__":
         columns=[config.PIPELINE_SEEDS[rok[0]] for rok in rollouts_k],
     ).to_csv((target_dir / "pipeline-rollouts-best.csv").as_posix(), sep=",")
 
-    simulate(*results_k[0][:3], save_directory_path=target_dir)
+    simulate(*results_k[0][:3], save_directory_path=target_dir, render=True)
 
     shutil.copy("config.py", target_dir.as_posix())
