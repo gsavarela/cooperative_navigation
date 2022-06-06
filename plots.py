@@ -205,6 +205,7 @@ def metrics_plot(
     _savefig(suptitle, save_directory_path)
     if show_plot:
         plt.show()
+    plt.close(fig)
 
 
 def returns_plot(
@@ -241,6 +242,7 @@ def returns_plot(
         Y.append(np.sum(rewards[episodes == idx]))
     Y = np.stack(Y)
 
+    fig = plt.figure()
     n_steps = Y.shape[0]
     X = np.linspace(1, n_steps, n_steps)
     if smooth:
@@ -251,6 +253,7 @@ def returns_plot(
             label="smooth"
         )
         plt.legend(loc=4)
+
     plt.plot(X, Y)
     plt.xlabel("Episode")
     plt.ylabel("Average Reward Return")
@@ -258,6 +261,8 @@ def returns_plot(
     _savefig(suptitle, save_directory_path)
     if show_plot:
         plt.show()
+    plt.close(fig)
+
 
 
 def train_plot(
@@ -289,6 +294,7 @@ def train_plot(
     n_steps = Y.shape[0]
     X = np.linspace(1, n_steps, n_steps)
 
+    fig = plt.figure()
     plt.plot(X, Y, c="C0", label="mean")
 
     if smooth:
@@ -304,10 +310,9 @@ def train_plot(
     plt.xlabel("Episode")
     plt.ylabel("Average Reward Return")
     _savefig("Train Pipeline (M=%s)" % M, save_directory_path)
-
     if show_plot:
         plt.show()
-
+    plt.close(fig)
 
 def rollout_plot(
     results: Array, n: int = 1, save_directory_path: Path = None, smooth: bool = False,
@@ -336,6 +341,7 @@ def rollout_plot(
     n_steps = Y.shape[0]
     X = np.linspace(1, n_steps, n_steps)
 
+    fig = plt.figure()
     plt.plot(X, Y, c="C0")
 
     if smooth:
@@ -351,9 +357,9 @@ def rollout_plot(
     plt.xlabel("Timesteps")
     plt.ylabel("Average Reward")
     _savefig("Train Rollout (M=%s)" % M, save_directory_path)
-
     if show_plot:
         plt.show()
+    plt.close(fig)
 
 
 def leader_plot(root_directory_path: Path, experiment_id: int, plot_type: str, show_plot: bool = False) -> None:
@@ -376,6 +382,8 @@ def leader_plot(root_directory_path: Path, experiment_id: int, plot_type: str, s
     """
     pattern = "*/{0:02d}/{1}*.csv".format(experiment_id, plot_type)
     print([*root_directory_path.glob(pattern)])
+
+    fig = plt.figure()
     for _n, _p in enumerate(root_directory_path.glob(pattern)):
         _label = _p.parent.parent.stem
         _df = pd.read_csv(_p.as_posix(), sep=",")
@@ -399,7 +407,7 @@ def leader_plot(root_directory_path: Path, experiment_id: int, plot_type: str, s
     plt.savefig(file_path.as_posix())
     if show_plot:
         plt.show()
-
+    plt.close(fig)
 
 def test_save_frames_as_gif() -> None:
     """Runs the CartPole environment for filming."""
