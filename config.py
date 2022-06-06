@@ -6,10 +6,10 @@ ZETA = 0.01
 EXPLORE_EPISODES = 2500
 EPISODES = 7500
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
-CONSENSUS_MATRIX_TYPE = 'laplacian'
+CONSENSUS_MATRIX_TYPE = 'metropolis'
 
 SEED = 1
-BASE_PATH = 'data/04_duo_consensus_learners/02_laplacian'
+BASE_PATH = 'data/04_duo_consensus_learners/03_fully_connected'
 
 N_WORKERS = 6
 N_AGENTS = 2

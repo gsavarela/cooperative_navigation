@@ -28,7 +28,7 @@ from scipy.sparse import csr_matrix
 from common import Array, List
 
 
-def consensus_matrices(n_nodes: int, cm_type: str = "metropolis", use_star: bool = False) -> List[Array]:
+def consensus_matrices(n_nodes: int, cm_type: str = "metropolis", fully_connected: bool = False) -> List[Array]:
     """Generates a list of consensus matrices
 
     Parameters
@@ -39,8 +39,8 @@ def consensus_matrices(n_nodes: int, cm_type: str = "metropolis", use_star: bool
     * cm_type: str = 'metropolis'
         A string with the algorithm for consensus.
 
-    * use_star: bool = False
-        If True will use fully connected matrice A = 1 - I
+    * fully_connected: bool = False
+        If True will use fully connected adjacency matrix A = 1 - I
 
     Returns
     -------
@@ -56,7 +56,7 @@ def consensus_matrices(n_nodes: int, cm_type: str = "metropolis", use_star: bool
 
     # Fully connected and bi-directional channels.
     cwms = []
-    if use_star:
+    if fully_connected:
         cwms.append(fn(np.ones((n_nodes, n_nodes), dtype=int) - np.eye(n_nodes)))
     else:
         max_edges = n_nodes * (n_nodes - 1) // 2
