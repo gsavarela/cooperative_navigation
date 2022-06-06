@@ -68,8 +68,6 @@ def train_w(args: Tuple[int]) -> Result:
             The environment encapsulating a scenario.
         agent: Agent
             The reinforcement learning agent.
-        traces: Traces
-            The tuple (s, a, r, s', a')
         results: Array
             The returns from the episodes.
 
@@ -121,8 +119,6 @@ def train(num: int, seed: int) -> Result:
             The environment encapsulating a scenario.
         agent: Agent
             The reinforcement learning agent.
-        traces: Traces
-            The tuple (s, a, r, s', a')
         results: Array
             The returns from the episodes.
     """
@@ -153,7 +149,6 @@ def train(num: int, seed: int) -> Result:
     )
     first = True
     res = []
-    traces = []
     info = defaultdict(list)
     # Starts the training
     for _ in trange(config.EPISODES, desc="episodes"):
@@ -183,13 +178,12 @@ def train(num: int, seed: int) -> Result:
             obs = next_obs
             actions = next_actions
             rewards.append(np.mean(next_rewards))
-            traces.append(tr)
             info['collisions'].append(env.n_collisions())
         res.append(np.sum(rewards))
     # Result is a column array
     res = np.array(res)[:, None]
 
-    return (num, env, agent, traces, res, info)
+    return (num, env, agent, res, info)
 
 
 def rollout(num: int, env: Environment, agent: AgentInterface) -> Rollout:
