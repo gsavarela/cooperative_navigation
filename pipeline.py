@@ -163,7 +163,7 @@ def train(num: int, seed: int) -> Result:
         first = False
         rewards = []
         for _ in trange(100, desc="timesteps"):
-            info['couplings'].append(len(actions) - len(set(actions)))
+            info['couplings'].append(int(len(set(actions))  == 1))
 
             # step environment
             next_obs, next_rewards, cwm = env.step(actions)
