@@ -1,19 +1,19 @@
 """Configuration"""
-ALPHA = 0.05  # ALPHA:
-BETA = 0.03  # BETA:
+ALPHA = 0.5  # ALPHA:
+BETA = 0.3  # BETA:
 TAU = 5.0   # Final TAU
-ZETA = 0.01
-EXPLORE_EPISODES = 2500
-EPISODES = 7500
+ZETA = 0.1
+EXPLORE_EPISODES = 4975
+EPISODES = 5000
 EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
 CONSENSUS_MATRIX_TYPE = 'metropolis'
 
 SEED = 1
-BASE_PATH = 'data/04_duo_consensus_learners/03_fully_connected'
+BASE_PATH = 'data/00_duo/'
 
 N_WORKERS = 6
 N_AGENTS = 2
-AGENT_TYPE = 'ActorCriticConsensus'
+AGENT_TYPE = 'ActorCriticIndependent'
 
 PIPELINE_SEEDS = [
     47,
