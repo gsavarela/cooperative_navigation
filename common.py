@@ -1,8 +1,10 @@
 """Common functions for the project."""
+from collections.abc import Iterable
 from enum import Enum
 from typing import List, Tuple
 from itertools import product
 from operator import itemgetter
+import string
 
 import numpy as np
 
@@ -47,3 +49,42 @@ def action_set(n_agents: int = 1) -> ActionSet:
 
 def onehot(action: Action) -> ActionsOneHot:
     return EYE[action, :]
+
+
+def snakefy(title_case: str) -> str:
+    """Converts `Title Case` into `snake_case`
+
+    Parameters:
+    ----------
+    title_case: str
+        Uppercase for new words and spaces to split then up.
+
+    Returns:
+    -------
+    filename: str
+        Space between words are filled with underscore (_).
+    """
+    fmt = title_case.translate(str.maketrans("", "", string.punctuation))
+    return "_".join(fmt.lower().split())
+
+def flatten(items, ignore_types=(str, bytes)):
+    """Gets a mixed list of elements and other lists
+
+    Usage:
+    -----
+    > items = [1, 2, [3, 4, [5, 6], 7], 8]
+
+    > # Produces 1 2 3 4 5 6 7 8
+    > for x in flatten(items):
+    >         print(x)
+
+    Ref:
+    ----
+
+    David Beazley. `Python Cookbook.'
+    """
+    for x in items:
+        if isinstance(x, Iterable) and not isinstance(x, ignore_types):
+            yield from flatten(x)
+        else:
+            yield x

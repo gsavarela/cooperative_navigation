@@ -16,18 +16,16 @@ References:
   approximation". In Advances in neural information processing
   systems (NIPS), Denver, CO. Cambridge: MIT Press.
 """
-from pathlib import Path
-
 import numpy as np
 from numpy.random import choice
 
 import config
 from common import Array, Observation, Action, ActionSet, Rewards
 from common import softmax
-from interfaces import AgentInterface, ActorCriticInterface
+from interfaces import AgentInterface, ActorCriticInterface, SerializableInterface
 
 
-class ActorCriticCentral(AgentInterface, ActorCriticInterface):
+class ActorCriticCentral(AgentInterface, ActorCriticInterface, SerializableInterface):
     """ActorCritic with Linear function approximation
 
     Attributes:
@@ -84,6 +82,7 @@ class ActorCriticCentral(AgentInterface, ActorCriticInterface):
         Learns from policy improvement and policy evalution.
 
     """
+
     fully_observable = True
     communication = False
 
@@ -260,6 +259,14 @@ if __name__ == "__main__":
             episodes=[],
         )
 
+    def plot_eval_best(rewards) -> None:
+        metrics_plot(
+            rewards,
+            "Average Rewards",
+            "Evaluation Rollouts (N={0}, seed={1:02d})".format(config.N_AGENTS, seed),
+            save_directory_path=get_dir() / 'best',
+        )
+
     def save(data, filename) -> None:
         csvname = "{0}.csv".format(filename)
         file_path = Path(get_dir()) / csvname
@@ -284,13 +291,19 @@ if __name__ == "__main__":
         decay=False,
         seed=config.SEED,
     )
+
     print("Fully observable: {0}".format(agent.fully_observable))
     print("Fully observable: {0}".format(ActorCriticCentral.fully_observable))
     print(agent.label)
+
+    get_dir().parent.mkdir(exist_ok=True)
+    get_dir().mkdir(exist_ok=True)
     first = True
     episodes = []
     rewards = []
     mus = []
+    best_rewards = -np.inf
+    best_episode = 0
     for episode in trange(config.EPISODES, desc="episodes"):
         # execution loop
         obs = env.reset()
@@ -316,6 +329,57 @@ if __name__ == "__main__":
             episodes.append(episode)
             mus.append(agent.mu)
 
+        if episode % 1000 == 0 or episode == config.EPISODES - 1:
+            env.save_checkpoints(get_dir(), 'current')
+            agent.save_checkpoints(get_dir(), 'current')
+
+            eval_agent = ActorCriticCentral.load_checkpoint(get_dir(), 'current')
+            eval_env = Environment.load_checkpoint(get_dir(), 'current')
+
+            # Must set a seed to an arbitrary number
+            # making the evaluations comparable.
+            obs = eval_env.reset(seed=47)
+            eval_agent.reset()
+            actions = eval_agent.act(obs)
+            eval_rewards = 0
+            for _ in trange(32, desc="evaluation"):
+                for _ in trange(100, desc="timesteps"):
+
+                    # step environment
+                    next_obs, next_rewards, _ = env.step(actions)
+
+                    # actor parameters.
+                    next_actions = eval_agent.act(next_obs)
+
+                    obs = next_obs
+                    actions = next_actions
+                    eval_rewards += np.mean(next_rewards)
+
+            print('Evaluation: Current: {0:0.2f}\tBest: {1:0.2f}'.format(eval_rewards / 3200, best_rewards))
+            if eval_rewards / 3200 > best_rewards:
+                if not (get_dir() / 'best').exists():
+                    (get_dir() / 'best').mkdir()
+
+                if not (get_dir() / 'best' / str(episode)).exists():
+                    (get_dir() / 'best' / str(episode)).mkdir()
+
+                for chkpt_path in (get_dir() / 'current').glob('*.chkpt'):
+                    if (get_dir() / 'best' / str(episode) / chkpt_path.name).exists():
+                        (get_dir() / 'best' / str(episode) / chkpt_path.name).unlink()
+                    shutil.move(chkpt_path.as_posix(), (get_dir() / 'best' / str(episode)).as_posix())
+
+                if best_episode < episode:
+                    shutil.rmtree((get_dir() / 'best' / str(best_episode)).as_posix())
+
+                test_agent = ActorCriticCentral.load_checkpoint((get_dir() / 'best'), str(episode))
+                np.testing.assert_array_almost_equal(test_agent.omega, agent.omega)
+                np.testing.assert_array_almost_equal(test_agent.theta, agent.theta)
+
+                best_rewards = eval_rewards / 3200
+                best_episode = episode
+
+    if (get_dir() / 'current').exists():
+        shutil.rmtree((get_dir() / 'current').as_posix())
     # Train plots and saves data.
     plot_returns(rewards, episodes)
     plot_rewards(rewards, episodes)
@@ -328,10 +392,52 @@ if __name__ == "__main__":
         (Path(get_dir() / "train-seed{0:02d}.csv".format(config.SEED)).as_posix()),
         sep=",",
     )
-
+        
     # This is a validation run.
-    obs = env.reset()
-    agent.reset(seed=config.SEED)
+    # Guarantees experiments are comparable.
+    obs = env.reset(seed=config.SEED)
+    prev_world = obs
+    print("World state: {0}".format(obs))
+    agent.reset()
+    agent.explore = False
+    actions = agent.act(obs)
+    frames = []
+    rewards = []
+    for _ in trange(100, desc="timesteps"):
+        # env.render()  # for humans
+        sleep(0.1)
+        frames += env.render(mode="rgb_array")  # for saving
+
+        # step environment
+        next_obs, next_rewards, _ = env.step(actions)
+
+        next_actions = agent.act(next_obs)
+
+        obs = next_obs
+        actions = next_actions
+
+        rewards.append(np.mean(next_rewards))
+
+    plot_eval(rewards)
+    pd.DataFrame(data=np.array(rewards).reshape((100, 1)), columns=[1]).to_csv(
+        (Path(get_dir()) / "test-seed{0:02d}.csv".format(config.SEED)).as_posix(),
+        sep=",",
+    )
+    save_frames_as_gif(
+        frames,
+        dir_path=get_dir(),
+        filename="simulation-seed{0:02d}.gif".format(seed),
+    )
+
+    shutil.copy("config.py", Path(get_dir()).as_posix())
+    print('Evaluation rewards (LAST): {0:0.2f}'.format(np.sum(rewards)))
+
+    # This is a validation run for best policy.
+    # Guarantees experiments are comparable.
+    obs = env.reset(seed=config.SEED)
+    print("World state: {0}".format(obs))
+    np.testing.assert_almost_equal(obs, prev_world)
+    agent = ActorCriticCentral.load_checkpoint((get_dir() / 'best'), str(best_episode))
     agent.explore = False
     actions = agent.act(obs)
     frames = []
@@ -350,16 +456,14 @@ if __name__ == "__main__":
         actions = next_actions
         rewards.append(np.mean(next_rewards))
 
-    plot_eval(rewards)
+    plot_eval_best(rewards)
     pd.DataFrame(data=np.array(rewards).reshape((100, 1)), columns=[1]).to_csv(
-        (Path(get_dir()) / "test-seed{0:02d}.csv".format(config.SEED)).as_posix(),
+        (Path(get_dir()) / "test-best-seed{0:02d}.csv".format(config.SEED)).as_posix(),
         sep=",",
     )
     save_frames_as_gif(
         frames,
         dir_path=get_dir(),
-        filename="simulation-seed{0:02d}.gif".format(seed),
-        interval=100,
-        fps=10,
+        filename="simulation-best-seed{0:02d}.gif".format(seed),
     )
-    shutil.copy("config.py", Path(get_dir()).as_posix())
+    print('Evaluation rewards (BEST): {0:0.2f}'.format(np.sum(rewards)))

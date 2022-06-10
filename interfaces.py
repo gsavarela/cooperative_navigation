@@ -1,9 +1,17 @@
 """Provides abstract classes that formalize a template"""
 import abc
+import dill
+from pathlib import Path
+from typing import TypeVar
 
 import numpy as np
-from common import Observation, Action, Rewards
+
 import config
+from common import Observation, Action, Rewards
+from common import snakefy
+
+
+T = TypeVar("T")
 
 
 class AgentInterface(abc.ABC):
@@ -75,7 +83,6 @@ class AgentInterface(abc.ABC):
             self.beta = np.power(self.decay_count, -0.65)
         self.episodes += 1
 
-
 class ActorCriticInterface(abc.ABC):
     """Actor Critic with Linear function approximation"""
 
@@ -96,3 +103,57 @@ class ActorCriticInterface(abc.ABC):
             return max(100 - (self.episodes - 1) * self.epsilon_step, config.TAU)
         else:
             return config.TAU
+
+class SerializableInterface(abc.ABC):
+    """Interfaces for classes that can be serialized/deserialized
+
+    Serialize is to convert a class from memory and save in binary form.
+    Conversely, deserialize loads a class from disk and instanciates to memory.
+
+    Methods
+    -------
+    save_checkpoints: chkpt_dir_path: str, chkpt_sub_dir: int
+        Saves the class on a path and a checkpoint number directory
+    load_checkpoint: chkpt_dir_path: str, chkpt_sub_dir: int
+        Deserializes class from path and checkpoint number directory
+    """
+
+    def save_checkpoints(self, chkpt_dir_path: str, chkpt_sub_dir: str):
+        """Saves the class on a path and a checkpoint number directory
+
+        Parameters
+        ----------
+        chkpt_dir_path: str
+            The directory path that the checkpoint will be saved
+        chkpt_sub_dir: str
+            The sub-directory path that the checkpoint will be saved
+
+        """
+        class_name = snakefy(type(self).__name__)
+        file_path = Path(chkpt_dir_path) / str(chkpt_sub_dir) / ("%s.chkpt" % class_name)
+        file_path.parent.mkdir(exist_ok=True)
+        with file_path.open(mode="wb") as f:
+            dill.dump(self, f)
+
+    @classmethod
+    def load_checkpoint(cls, chkpt_dir_path: str, chkpt_sub_dir: str) -> T:
+        """Deserializes class from path and checkpoint number directory
+
+        Parameters
+        ----------
+        chkpt_dir_path: str
+            The directory path that the checkpoint will be saved
+        chkpt_sub_dir: str
+            The sub-directory path that the checkpoint will be saved
+
+        Returns
+        -------
+        obj: T
+            The instance of a class cls
+        """
+        class_name = snakefy(cls.__name__)
+        file_path = Path(chkpt_dir_path) / str(chkpt_sub_dir) / ("%s.chkpt" % class_name)
+        with file_path.open(mode="rb") as f:
+            new_instance = dill.load(f)
+
+        return new_instance

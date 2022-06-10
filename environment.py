@@ -8,9 +8,10 @@ import networked_spread as ns
 
 from common import action_set, onehot, Action, Step
 from consensus import consensus_matrices
+from interfaces import SerializableInterface
 
 
-class Environment(Base):
+class Environment(Base, SerializableInterface):
     """Environment that memoizes world and scenario for easy access.
 
     Attributes:
@@ -65,7 +66,7 @@ class Environment(Base):
         seed: int = 0,
         central: bool = True,
         communication: bool = False,
-        cm_type: str = 'metropolis'
+        cm_type: str = "metropolis",
     ):
         if scenario not in ("simple_spread", "networked_spread"):
             raise ValueError("Invalid scenario: %s" % scenario)
@@ -78,7 +79,6 @@ class Environment(Base):
         self.action_set = action_set(n)
         self.central = central
         self.communication = communication
-
 
         super(Environment, self).__init__(
             self.world,
@@ -95,8 +95,8 @@ class Environment(Base):
             ]
 
         if self.communication:
-            if cm_type not in ('metropolis', 'normalized_laplacian', 'laplacian'):
-                raise ValueError('Invalid Consensus Matrix %s' % (cm_type))
+            if cm_type not in ("metropolis", "normalized_laplacian", "laplacian"):
+                raise ValueError("Invalid Consensus Matrix %s" % (cm_type))
             self.cwms = consensus_matrices(n, cm_type=cm_type)
 
     def step(self, actions: Action) -> Step:
@@ -114,6 +114,25 @@ class Environment(Base):
         return next_observations, next_rewards, cwm
 
     def n_collisions(self) -> int:
-        return sum([
-            int(self.scenario._is_collision(i, j))
-            for i, j in zip(self.world.players[:-1], self.world.players[1:])])
+        return sum(
+            [
+                int(self.scenario._is_collision(i, j))
+                for i, j in zip(self.world.players[:-1], self.world.players[1:])
+            ]
+        )
+
+    def reset(self, seed: int = None) -> None:
+        """Resets seed, updates world."""
+        if seed is not None:
+            np.random.seed(seed)
+
+        # reset world
+        self.reset_callback(self.world)
+        # reset renderer
+        self._reset_render()
+        # record observations for each agent
+        obs_n = []
+        self.agents = self.world.policy_agents
+        for agent in self.agents:
+            obs_n.append(self._get_obs(agent))
+        return obs_n
