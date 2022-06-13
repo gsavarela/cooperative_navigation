@@ -4,6 +4,7 @@ from enum import Enum
 from typing import List, Tuple
 from itertools import product
 from operator import itemgetter
+from pathlib import Path
 import string
 
 import numpy as np
@@ -88,3 +89,13 @@ def flatten(items, ignore_types=(str, bytes)):
             yield from flatten(x)
         else:
             yield x
+
+def make_dirs(save_directory_path: Path) -> None:
+    # iteractively check for path and builds where it doesnt exist.
+    prev_path = None
+    for sub_dir in save_directory_path.parts:
+        if prev_path is None:
+            prev_path = Path(sub_dir)
+        else:
+            prev_path = prev_path / sub_dir
+        prev_path.mkdir(exist_ok=True)
