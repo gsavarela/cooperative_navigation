@@ -17,11 +17,10 @@ References:
   systems (NIPS), Denver, CO. Cambridge: MIT Press.
 """
 import numpy as np
-from numpy.random import choice
 
 import config
 from common import Array, Observation, Action, ActionSet, Rewards
-from common import softmax
+from common import softmax, make_dirs
 from interfaces import AgentInterface, ActorCriticInterface, SerializableInterface
 
 
@@ -141,7 +140,7 @@ class ActorCriticCentral(AgentInterface, ActorCriticInterface, SerializableInter
 
         """
         pi = self._PI(np.hstack(state))
-        cur = choice(len(self.action_set), p=pi.flatten())
+        cur = self.rng.choice(len(self.action_set), p=pi.flatten())
         return self.action_set[cur]
 
     def update(
@@ -289,16 +288,14 @@ if __name__ == "__main__":
         explore_episodes=config.EXPLORE_EPISODES,
         explore=config.EXPLORE,
         decay=False,
-        seed=config.SEED,
+        seed=seed,
     )
 
     print("Fully observable: {0}".format(agent.fully_observable))
     print("Fully observable: {0}".format(ActorCriticCentral.fully_observable))
     print(agent.label)
 
-    get_dir().parent.mkdir(exist_ok=True)
-    get_dir().mkdir(exist_ok=True)
-    first = True
+    make_dirs(get_dir())
     episodes = []
     rewards = []
     mus = []
@@ -307,13 +304,9 @@ if __name__ == "__main__":
     for episode in trange(config.EPISODES, desc="episodes"):
         # execution loop
         obs = env.reset()
-        if not first:
-            agent.reset()
         actions = agent.act(obs)
 
-        first = False
         for _ in trange(100, desc="timesteps"):
-
             # step environment
             next_obs, next_rewards, _ = env.step(actions)
 
@@ -336,15 +329,17 @@ if __name__ == "__main__":
             eval_agent = ActorCriticCentral.load_checkpoint(get_dir(), 'current')
             eval_env = Environment.load_checkpoint(get_dir(), 'current')
 
-            # Must set a seed to an arbitrary number
-            # making the evaluations comparable.
-            obs = eval_env.reset(seed=47)
-            eval_agent.reset()
-            actions = eval_agent.act(obs)
             eval_rewards = 0
+            first = True
             for _ in trange(32, desc="evaluation"):
-                for _ in trange(100, desc="timesteps"):
 
+                # Reseeds a copy of the original environment.
+                eval_seed = 47 if first else None
+                obs = eval_env.reset(seed=eval_seed)
+                eval_agent.reset(seed=eval_seed)
+                actions = eval_agent.act(obs)
+                first = False
+                for _ in trange(100, desc="timesteps"):
                     # step environment
                     next_obs, next_rewards, _ = env.step(actions)
 
@@ -398,8 +393,8 @@ if __name__ == "__main__":
     obs = env.reset(seed=config.SEED)
     prev_world = obs
     print("World state: {0}".format(obs))
-    agent.reset()
     agent.explore = False
+    agent.reset(seed=config.SEED)
     actions = agent.act(obs)
     frames = []
     rewards = []
@@ -439,6 +434,7 @@ if __name__ == "__main__":
     np.testing.assert_almost_equal(obs, prev_world)
     agent = ActorCriticCentral.load_checkpoint((get_dir() / 'best'), str(best_episode))
     agent.explore = False
+    agent.reset(seed=config.SEED)
     actions = agent.act(obs)
     frames = []
     rewards = []

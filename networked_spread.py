@@ -59,6 +59,9 @@ class NetworkedSpreadScenario(BaseScenario):
     seed(): int
         Regulates assignments, coefficients and entities' initial positions
 
+    rng(): numpy.random.default_rng()
+        Instance of random number generator. Prevents setting the seed globally.
+
     Methods:
     --------
     make_world(n_players: int = 1, restart: bool = False, seed: int = 0): World
@@ -97,10 +100,14 @@ class NetworkedSpreadScenario(BaseScenario):
         """Regulates assignments, coefficients and entities' initial positions"""
         return self._seed
 
+    @property
+    def rng(self) -> int:
+        """Random number generator"""
+        return self._rng
+
     def make_world(self, n_players: int = 1, seed: int = 0) -> World:
         """Builds the world and its entities: players and landmarks."""
         # persist decision on restart
-        self._seed = seed
 
         world = World()
 
@@ -123,17 +130,24 @@ class NetworkedSpreadScenario(BaseScenario):
             landmark.movable = False
             world.landmarks.append(landmark)
 
-        # make initial conditions
-        np.random.seed(self.seed)
-        self.reset_world(world)
+        self._seed = seed
+        self.reset_world(world, seed=seed)
 
         return world
 
-    def reset_world(self, world: World) -> None:
-        """Moves agents to initial position and sets velocity to zero."""
+    def reset_world(self, world: World, seed: int = None) -> None:
+        """Moves agents to initial position and sets velocity to zero.
+
+        BEWARE: Use case for seed is to recycle evaluation environments,
+        from execution environments. Seeding before every run may harm
+        exploration and hence, learning.
+        """
+        if seed is not None:
+            self._rng = np.random.default_rng(seed)
+
         n = len(world.players)
 
-        self._assignment = np.random.choice(n, size=n, replace=False)
+        self._assignment = self.rng.choice(n, size=n, replace=False)
         self._coefficients = np.ones(n)
 
         # random properties for players
@@ -149,13 +163,13 @@ class NetworkedSpreadScenario(BaseScenario):
 
         # set random initial states
         for player in world.players:
-            player.state.p_pos = np.random.uniform(-1, +1, world.dim_p)
+            player.state.p_pos = self.rng.uniform(-1, +1, world.dim_p)
             player.state.p_vel = np.zeros(world.dim_p)
             player.state.c = np.zeros(world.dim_c)
 
         # Set the landmarks randomly
         for i, landmark in enumerate(world.landmarks):
-            landmark.state.p_pos = np.random.uniform(-1, +1, world.dim_p)
+            landmark.state.p_pos = self.rng.uniform(-1, +1, world.dim_p)
             landmark.state.p_vel = np.zeros(world.dim_p)
 
     def _is_collision(self, player1: Agent, player2: Agent) -> bool:

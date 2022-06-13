@@ -1,20 +1,37 @@
 """Configuration"""
-ALPHA = 0.5  # ALPHA:
-BETA = 0.3  # BETA:
-TAU = 5.0   # Final TAU
+# Alpha learning rate for the critic
+ALPHA = 0.5
+# Learning rate for the actor
+BETA = 0.3
+# Final temperature parameter
+TAU = 5.0
+# The weighting for the moving average
 ZETA = 0.1
-EXPLORE_EPISODES = 4975
-EPISODES = 5000
-EXPLORE = True  # WHETER OR NOT WE USE EXPLORATION
+# The episodes with temperature greater than TAU
+EXPLORE_EPISODES = 4000
+# The total number of training episodes.
+EPISODES = 10000
+# Applies temperature parameter from 100-TAU
+EXPLORE = True
+# Only for consensus learners
 CONSENSUS_MATRIX_TYPE = 'metropolis'
-
+# Stop training at every checkpoint_interval
+CHECKPOINT_INTERVAL = 500
+# Evaluate checkpoint for checkpoint evaluations
+CHECKPOINT_EVALUATIONS = 32
+# Training_cycle = train for checkpoint interval + checkpoint_evaluation
+TRAINING_CYCLES = EPISODES // CHECKPOINT_INTERVAL
+# Seed for individual runs, e.g, `python central.py`
 SEED = 1
-BASE_PATH = 'data/00_duo/'
-
+# The path that the experiments will be saved at.
+BASE_PATH = 'data/00_duo/00_random_number_generators'
+# The number of pipeline workers
 N_WORKERS = 6
+# The hyperparameter for the environment: Number of agents.
 N_AGENTS = 2
-AGENT_TYPE = 'ActorCriticIndependent'
-
+# The pipeline agent
+AGENT_TYPE = 'ActorCriticDistributed'
+# Those are the training random seeds, i.e., `.\pipeline`
 PIPELINE_SEEDS = [
     47,
     48,

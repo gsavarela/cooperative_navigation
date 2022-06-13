@@ -37,6 +37,17 @@ class Environment(Base, SerializableInterface):
     cm_type: str = 'metropolis'
         The consensus matrix type (valid only communication=True).
 
+    rng: numpy.random.default_rng
+        Random number generator. Delegate from scenario.
+
+    Methods:
+    -------
+    reset(seed): None
+        Resets the world state.
+        BEWARE: Use case for seed is to recycle evaluation environments,
+        from training environments. Seeding before every run may harm
+        exploration and hence, learning.
+
     See Also:
     ---------
     Base.n : int
@@ -58,6 +69,10 @@ class Environment(Base, SerializableInterface):
         if self.central:
             return sum(map(lambda x: x.shape[0], self.observation_space))
         return self.observation_space[0].shape[0]
+
+    @property
+    def rng(self):
+        return self.scenario.rng
 
     def __init__(
         self,
@@ -109,7 +124,7 @@ class Environment(Base, SerializableInterface):
 
         cwm = None
         if self.communication:
-            cwm = self.cwms[np.random.randint(len(self.cwms))]
+            cwm = self.cwms[self.rng.choice(len(self.cwms))]
 
         return next_observations, next_rewards, cwm
 
@@ -122,12 +137,9 @@ class Environment(Base, SerializableInterface):
         )
 
     def reset(self, seed: int = None) -> None:
-        """Resets seed, updates world."""
-        if seed is not None:
-            np.random.seed(seed)
-
+        """Updates world."""
         # reset world
-        self.reset_callback(self.world)
+        self.reset_callback(self.world, seed=seed)
         # reset renderer
         self._reset_render()
         # record observations for each agent
@@ -136,3 +148,4 @@ class Environment(Base, SerializableInterface):
         for agent in self.agents:
             obs_n.append(self._get_obs(agent))
         return obs_n
+

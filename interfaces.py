@@ -1,4 +1,9 @@
-"""Provides abstract classes that formalize a template"""
+"""Provides abstract classes that formalize a template
+
+References
+----------
+..[1] https://towardsdatascience.com/stop-using-numpy-random-seed-581a9972805f
+"""
 import abc
 import dill
 from pathlib import Path
@@ -27,6 +32,11 @@ class AgentInterface(abc.ABC):
     def communication() -> bool:
         """Agents may communicate during training"""
 
+    @property
+    def rng(self) -> bool:
+        """Random number generator"""
+        return self._rng
+
     @abc.abstractmethod
     def act(self, state: Observation) -> Action:
         """Select an action based on state
@@ -40,7 +50,6 @@ class AgentInterface(abc.ABC):
         --------
         actions: Actions
             The actions for all players.
-
         """
 
     @abc.abstractmethod
@@ -73,9 +82,14 @@ class AgentInterface(abc.ABC):
         """
 
     def reset(self, seed: int = None) -> None:
-        """Resets seed, updates number of steps."""
+        """Resets seed, updates number of steps.
+
+        BEWARE: Use case for seeding is object creation and
+        to benchmark evaluation runs. Reseeding before an
+        episode may prevent learning.
+        """
         if seed is not None:
-            np.random.seed(seed)
+            self._rng = np.random.default_rng(seed)
 
         if self.decay:
             self.decay_count += 1
