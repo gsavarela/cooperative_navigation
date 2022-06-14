@@ -82,6 +82,7 @@ class Environment(Base, SerializableInterface):
         central: bool = True,
         communication: bool = False,
         cm_type: str = "metropolis",
+        cm_max_edges: int = 0,
     ):
         if scenario not in ("simple_spread", "networked_spread"):
             raise ValueError("Invalid scenario: %s" % scenario)
@@ -112,7 +113,7 @@ class Environment(Base, SerializableInterface):
         if self.communication:
             if cm_type not in ("metropolis", "normalized_laplacian", "laplacian"):
                 raise ValueError("Invalid Consensus Matrix %s" % (cm_type))
-            self.cwms = consensus_matrices(n, cm_type=cm_type)
+            self.cwms = consensus_matrices(n, cm_type=cm_type, cm_max_edges=cm_max_edges)
 
     def step(self, actions: Action) -> Step:
         next_observations, next_rewards, *_ = super(Environment, self).step(

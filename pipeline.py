@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-"""Runs (a) train (b) evaluation (c) simulation."""
+"""Runs (a) train - evaluation (c) simulation."""
 from pathlib import Path
 from typing import List, Tuple, Union, Dict
+from collections.abc import Sequence
 from time import sleep
 import numpy as np
 import pandas as pd
@@ -16,7 +17,7 @@ from consensus_learners import ActorCriticConsensus
 from interfaces import AgentInterface
 
 from environment import Environment
-from common import Observation, Action, Rewards, Array, make_dirs
+from common import Array, make_dirs
 from plots import train_plot, rollout_plot
 from tqdm.auto import trange
 from plots import save_frames_as_gif
@@ -25,9 +26,7 @@ from log import log_traces
 
 
 # Pipeline Types
-Trace = Tuple[Observation, Action, Rewards, Observation, Action]
-Traces = List[Trace]
-Result = Tuple[int, Environment, AgentInterface, Traces, Array]
+Result = Tuple[int, Environment, AgentInterface, Sequence, Dict]
 Results = List[Result]
 RolloutCheckpoint = Tuple[int, float]
 RolloutTest = Tuple[int, Array, Dict]
@@ -106,7 +105,6 @@ def train(num: int, seed: int) -> Result:
     -----------
     num: int
         The experiment identifier.
-
     seed: int
         Regulates the random number generator.
 
@@ -122,6 +120,8 @@ def train(num: int, seed: int) -> Result:
             The reinforcement learning agent.
         results: Array
             The returns from the episodes.
+        info: Dict
+            Extra loop data, e.g, collisions and couplings.
     """
     # Defines the actor critic agent.
     Agent = get_agent()
@@ -134,6 +134,7 @@ def train(num: int, seed: int) -> Result:
         central=Agent.fully_observable,
         communication=Agent.communication,
         cm_type=config.CONSENSUS_MATRIX_TYPE,
+        cm_max_edges=config.CONSENSUS_MAX_EDGES
     )
 
     # Instanciates the actor critic agent.
@@ -182,7 +183,7 @@ def train(num: int, seed: int) -> Result:
                     (chkpt_dir_path / chkpt_path.name).unlink()
                 shutil.move(chkpt_path.as_posix(), chkpt_dir_path.as_posix())
 
-            if best_episode < chkpt_episode:
+            if best_episode <= chkpt_episode:
                 chkpt_best_dir_path = best_dir_path / str(seed) / str(best_episode)
                 if chkpt_best_dir_path.exists():
                     shutil.rmtree(chkpt_best_dir_path.as_posix())
@@ -200,7 +201,7 @@ def train(num: int, seed: int) -> Result:
 
 def train_checkpoint(
     num: int, env: Environment, agent: AgentInterface, res: List, info: Dict
-) -> Tuple[List, Dict]:
+) -> Result:
     """Trains agent for CHECKPOINT_INTERVAL steps"""
     # Starts the training
     for _ in trange(config.CHECKPOINT_INTERVAL, desc="train_episodes"):
@@ -230,7 +231,7 @@ def train_checkpoint(
             rewards.append(np.mean(next_rewards))
             info["collisions"].append(env.n_collisions())
         res.append(np.sum(rewards))
-    return res, info
+    return num, env, agent, res, info
 
 
 def rollout_checkpoint(
@@ -240,9 +241,9 @@ def rollout_checkpoint(
 
     Parameters:
     -----------
-    num: int
-    env: Environment
-    agent: Agent
+    um: int,
+    current_dir_path: Path
+    seed: int
 
     Returns:
     --------

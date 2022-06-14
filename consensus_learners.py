@@ -323,7 +323,8 @@ if __name__ == "__main__":
         seed=seed,
         central=ActorCriticConsensus.fully_observable,
         communication=ActorCriticConsensus.communication,
-        cm_type=config.CONSENSUS_MATRIX_TYPE
+        cm_type=config.CONSENSUS_MATRIX_TYPE,
+        cm_max_edges=config.CONSENSUS_MAX_EDGES
     )
     agent = ActorCriticConsensus(
         n_players=config.N_AGENTS,

@@ -19,7 +19,6 @@ Reference
 
 """
 from itertools import combinations
-from os import wait
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -28,7 +27,11 @@ from scipy.sparse import csr_matrix
 from common import Array, List
 
 
-def consensus_matrices(n_nodes: int, cm_type: str = "metropolis", fully_connected: bool = False) -> List[Array]:
+def consensus_matrices(
+    n_nodes: int,
+    cm_type: str = "metropolis",
+    cm_max_edges: int = 0,
+) -> List[Array]:
     """Generates a list of consensus matrices
 
     Parameters
@@ -49,20 +52,16 @@ def consensus_matrices(n_nodes: int, cm_type: str = "metropolis", fully_connecte
     """
     if n_nodes == 1:
         raise ValueError("%s invalid" % str(n_nodes))
+    if cm_max_edges < 0 or cm_max_edges > (n_nodes * (n_nodes - 1) // 2):
+        raise ValueError("max_edges: %s invalid" % str(cm_max_edges))
     if cm_type not in ("metropolis", "normalized_laplacian", "laplacian"):
         raise ValueError("%s invalid" % cm_type)
     else:
         fn = eval("%s_weights_matrix" % cm_type)
 
-    # Fully connected and bi-directional channels.
     cwms = []
-    if fully_connected:
-        cwms.append(fn(np.ones((n_nodes, n_nodes), dtype=int) - np.eye(n_nodes)))
-    else:
-        max_edges = n_nodes * (n_nodes - 1) // 2
-        for n_edges in range(max_edges + 1):  # inclusive
-            ams = adjacency_matrices(n_nodes, n_edges)
-            cwms += map(fn, ams)
+    ams = adjacency_matrices(n_nodes, cm_max_edges)
+    cwms += map(fn, ams)
     return cwms
 
 
