@@ -17,7 +17,7 @@ from consensus_learners import ActorCriticConsensus
 from interfaces import AgentInterface
 
 from environment import Environment
-from common import Array, make_dirs
+from common import Array, make_dirs, Action
 from plots import train_plot, rollout_plot
 from tqdm.auto import trange
 from plots import save_frames_as_gif
@@ -47,6 +47,9 @@ def get_agent() -> AgentInterface:
 def get_dir() -> Path:
     return Path(config.BASE_PATH) / PATHS[config.AGENT_TYPE] / "02"
 
+def get_couplings(actions: Action) -> int:
+    """Coupling: measures if all agents select the same action"""
+    return int(len(set(actions)) == 1)
 
 def train_w(args: Tuple[int]) -> Result:
     """Thin wrapper for train.
@@ -213,7 +216,7 @@ def train_checkpoint(
 
         rewards = []
         for _ in trange(100, desc="train_timesteps"):
-            info["couplings"].append(int(len(set(actions)) == 1))
+            info["couplings"].append(get_couplings(actions))
 
             # step environment
             next_obs, next_rewards, cwm = env.step(actions)
@@ -302,7 +305,7 @@ def rollout_test(num: int, env: Environment, agent: AgentInterface) -> RolloutTe
     res = []
     info = defaultdict(list)
     for _ in trange(100, desc="timesteps"):
-        info["couplings"].append(len(actions) - len(set(actions)))
+        info["couplings"].append(get_couplings(actions))
 
         # step environment
         next_obs, next_rewards, _ = env.step(actions)
