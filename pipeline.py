@@ -342,13 +342,19 @@ def get_results(tuples_list: RuR) -> Array:
     return np.hstack([*map(itemgetter(-2), tuples_list)])
 
 
-def top_k(tuples_list: RuR, k: int = 5) -> RuR:
+def top_k(tuples_list: RuR, k: int = 5, skip_obs: int = 0) -> RuR:
     """Returns the top k experiments
 
     Parameters:
     -----------
     tuples_list: union[results, rollouts]
         Either results or rollouts list of tuples.
+    k: int = 5
+        Top K results
+    skip_obs: int = 0
+        Skips the first `skip_obs` observations.
+        For rollouts will skip timesteps for
+        results will skip episodes.
 
     Returns:
     --------
@@ -357,7 +363,7 @@ def top_k(tuples_list: RuR, k: int = 5) -> RuR:
     """
 
     def fn(x):
-        return np.mean(x[-2][50:])
+        return np.mean(x[-2][skip_obs:])
 
     return sorted(tuples_list, key=fn, reverse=True)[:k]
 
@@ -487,7 +493,7 @@ if __name__ == "__main__":
     pd.DataFrame(
         data=get_results(results_k),
         columns=[config.PIPELINE_SEEDS[rok[0]] for rok in results_k],
-    ).to_csv((get_dir() / "pipeline-results-best.csv").as_posix(), sep=",")
+    ).to_csv((get_dir() / "pipeline-results-top03.csv").as_posix(), sep=",")
 
     # Rollouts
     rollouts = [*map(rollout_w, results)]
@@ -517,17 +523,16 @@ if __name__ == "__main__":
         (get_dir() / "pipeline-rollouts-collisions.csv").as_posix(), sep=","
     )
     # Rollouts plot -- K Best runs.
-    rollouts_k = [
-        roll for roll in rollouts if roll[0] in set([*map(itemgetter(0), results_k)])
-    ]
+    rollouts_k = top_k(rollouts, k=3)
     rollout_plot(
         get_results(rollouts_k), n=config.N_AGENTS, save_directory_path=get_dir()
     )
     pd.DataFrame(
         data=get_results(rollouts_k),
         columns=[config.PIPELINE_SEEDS[rok[0]] for rok in rollouts_k],
-    ).to_csv((get_dir() / "pipeline-rollouts-best.csv").as_posix(), sep=",")
+    ).to_csv((get_dir() / "pipeline-rollouts-top03.csv").as_posix(), sep=",")
+
+    shutil.copy("config.py", get_dir().as_posix())
 
     simulate(*results_k[0][:3], save_directory_path=get_dir(), render=True)
 
-    shutil.copy("config.py", get_dir().as_posix())
