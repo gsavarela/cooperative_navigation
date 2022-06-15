@@ -534,5 +534,5 @@ if __name__ == "__main__":
 
     shutil.copy("config.py", get_dir().as_posix())
 
-    simulate(*results_k[0][:3], save_directory_path=get_dir(), render=True)
+    simulate(*results_k[0][:3], save_directory_path=get_dir(), render=False)
 
