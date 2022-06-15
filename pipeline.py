@@ -1,13 +1,14 @@
 #!/usr/bin/env python
-"""Runs (a) train - evaluation (c) simulation."""
+"""Runs (a) train - evaluation loop (b) test (c) simulation."""
+from collections import defaultdict
+from collections.abc import Sequence
+from copy import deepcopy
 from pathlib import Path
 from typing import List, Tuple, Union, Dict
-from collections.abc import Sequence
 from time import sleep
+
 import numpy as np
 import pandas as pd
-from collections import defaultdict
-
 
 import config
 from central import ActorCriticCentral
@@ -264,7 +265,7 @@ def rollout_checkpoint(
 
     res = []
     for i in trange(config.CHECKPOINT_EVALUATIONS, desc="checkpoint_evaluations"):
-        eval_seed = 47 if (i == 0) else None
+        eval_seed = 2022 if (i == 0) else None
         obs = env_chkpt.reset(seed=eval_seed)
         agent_chkpt.reset(seed=eval_seed)
         actions = agent_chkpt.act(obs)
@@ -298,25 +299,29 @@ def rollout_test(num: int, env: Environment, agent: AgentInterface) -> RolloutTe
     rollout: RolloutTest
         The rollout type -- num: int and rewards: Array
     """
-    obs = env.reset()
-    agent.reset(seed=env.scenario.seed)
-    agent.explore = False
-    actions = agent.act(obs)
+    # Makes a copy to not change internal states.
+    rollout_env = deepcopy(env)
+    rollout_agent = deepcopy(agent)
+
+    obs = rollout_env.reset(seed=env.scenario.seed + 1000)
+    rollout_agent.reset()
+    rollout_agent.explore = False
+    actions = rollout_agent.act(obs)
     res = []
     info = defaultdict(list)
     for _ in trange(100, desc="timesteps"):
         info["couplings"].append(get_couplings(actions))
 
         # step environment
-        next_obs, next_rewards, _ = env.step(actions)
+        next_obs, next_rewards, _ = rollout_env.step(actions)
 
-        next_actions = agent.act(next_obs)
+        next_actions = rollout_agent.act(next_obs)
 
         obs = next_obs
         actions = next_actions
         res.append(np.mean(next_rewards))
 
-        info["collisions"].append(env.n_collisions())
+        info["collisions"].append(rollout_env.n_collisions())
     # Result is a column array
     res = np.array(res)[:, None]
     return (num, res, info)
@@ -378,20 +383,24 @@ def simulate(
 
     render: Bool, False
     """
-    obs = env.reset()
-    agent.reset()
-    agent.explore = False
-    actions = agent.act(obs)
+    # Makes a copy to not change internal states.
+    sim_env = deepcopy(env)
+    sim_agent = deepcopy(agent)
+
+    obs = sim_env.reset()
+    sim_agent.reset()
+    sim_agent.explore = False
+    actions = sim_agent.act(obs)
     frames = []
     rewards = []
     for _ in trange(100, desc="timesteps"):
         if render:
             sleep(0.1)
-            frames += env.render(mode="rgb_array")  # for saving
+            frames += sim_env.render(mode="rgb_array")  # for saving
 
-        next_obs, next_rewards, _ = env.step(actions)
+        next_obs, next_rewards, _ = sim_env.step(actions)
 
-        next_actions = agent.act(next_obs)
+        next_actions = sim_agent.act(next_obs)
 
         obs = next_obs
         actions = next_actions
