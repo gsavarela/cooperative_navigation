@@ -29,9 +29,9 @@ TRAINING_CYCLES = EPISODES // CHECKPOINT_INTERVAL
 # Seed for individual runs, e.g, `python central.py`
 SEED = 1
 # The path that the experiments will be saved at.
-BASE_PATH = 'data/00_duo_w08'
+BASE_PATH = 'data/00_duo_w08v2'
 # The number of pipeline workers
-N_WORKERS = 6
+N_WORKERS = 15
 # Those are the training random seeds, i.e., `.\pipeline`
 PIPELINE_SEEDS = [
     47,
