@@ -13,7 +13,7 @@ import pandas as pd
 import config
 from central import ActorCriticCentral
 from independent_learners import ActorCriticIndependent
-from distributed_learners import ActorCriticDistributed
+from distributed_learners2 import ActorCriticDistributed
 from consensus_learners import ActorCriticConsensus
 from interfaces import AgentInterface
 
