@@ -3,15 +3,20 @@ import string
 from pathlib import Path
 import re
 from typing import List
-from common import Array
+from time import sleep
+
+from matplotlib import animation
+import statsmodels.api as sm  # Seaborn to make fast computations.
+import gym
+from tqdm.auto import trange
 
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from matplotlib import animation
-import statsmodels.api as sm  # Seaborn to make fast computations.
-import gym
+from common import Array
+from environment import Environment
+from interfaces import AgentInterface
 
 FIGURE_X = 6.0
 FIGURE_Y = 4.0
@@ -436,10 +441,72 @@ def test_leader_plot(directory_path: Path = Path("./data/01_duo/1000")):
     leader_plot(directory_path, experiment_id, plot_type="test")
 
 
+def make_gifs(experiment_agent_cls: AgentInterface, experiment_dir_path: Path, experiment_type: str = 'best') -> None:
+    """Makes gifs from experiments
+
+    Parameters
+    ----------
+    experiment_agent_cls: AgentInterface,
+        An agent the implements the serializable interface.
+
+    experiment_dir_path: Path,
+        An experiment path, e.g,
+
+    experiment_type: str = 'best'
+        `current` or `best`
+    """
+    # sanitize parameters
+    if experiment_type not in ('best', 'current'):
+        raise ValueError('experiment_type: must be best or current')
+
+    # discover the best run seed.
+    search_dir_path = experiment_dir_path / 'pipeline-rollouts.csv'
+    df = pd.read_csv(search_dir_path.as_posix(), sep=',', index_col=0)
+    seed = df.mean(axis=0).idxmax()
+    max_average_reward = df.mean(axis=0).max()
+    search_dir_path = experiment_dir_path / experiment_type / seed
+
+    # map path to class
+    # we consider that there is only one agent.
+    chkpt_path = [*search_dir_path.glob('*')][-1]
+    agent = experiment_agent_cls.load_checkpoint(chkpt_path, '')
+    env = Environment.load_checkpoint(chkpt_path, '')
+
+    import ipdb; ipdb.set_trace()
+    # load agent and environment
+    obs = env.reset(seed=env.scenario.seed + 1000)
+    agent.reset()
+    actions = agent.act(obs)
+    frames = []
+    rewards = []
+    for _ in trange(100, desc="timesteps"):
+        sleep(0.1)
+        frames += env.render(mode="rgb_array")  # for saving
+
+        next_obs, next_rewards, _ = env.step(actions)
+
+        next_actions = agent.act(next_obs)
+
+        obs = next_obs
+        actions = next_actions
+        rewards.append(np.mean(next_rewards))
+
+    print('max_average_reward:{0:0.2f}\tsimulation_reward:{1:0.2f}'.format(max_average_reward, np.mean(rewards)))
+    save_frames_as_gif(
+        frames,
+        dir_path=experiment_dir_path,
+        filename="simulation-pipeline-{0}.gif".format(experiment_type),
+    )
+
 if __name__ == "__main__":
     # Uncomment to test save_frames_as_gif
     # test_save_frames_as_gif()
-    # Uncomment to test save_frames_as_gif
-    test_leader_plot(Path("./data/01_duo/1000"))
-    test_leader_plot(Path("./data/01_duo/10000"))
-    test_leader_plot(Path("./data/01_duo/5000"))
+    # Uncomment to test  leader_plot
+    # test_leader_plot(Path("./data/01_duo/1000"))
+    # from independent_learners import ActorCriticIndependent
+    # make_gifs(ActorCriticIndependent, Path('./data/00_duo_w08/02_independent_learners/02'), 'best')
+    # from central import ActorCriticCentral
+    # make_gifs(ActorCriticCentral, Path('./data/00_duo_w08/00_central/02'), 'best')
+    from distributed_learners import ActorCriticDistributed
+    make_gifs(ActorCriticDistributed, Path('./data/00_duo_w08/01_distributed_learners/02'), 'best')
+
