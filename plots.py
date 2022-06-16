@@ -491,7 +491,7 @@ def make_gifs(experiment_agent_cls: AgentInterface, experiment_dir_path: Path, e
         actions = next_actions
         rewards.append(np.mean(next_rewards))
 
-    print('max_average_reward:{0:0.2f}\tsimulation_reward:{1:0.2f}'.format(max_average_reward, np.mean(rewards)))
+    print('max_average_reward:{0:0.4f}\tsimulation_reward:{1:0.4f}'.format(max_average_reward, np.mean(rewards)))
     save_frames_as_gif(
         frames,
         dir_path=experiment_dir_path,

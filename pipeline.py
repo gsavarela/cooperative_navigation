@@ -374,7 +374,7 @@ def simulate(
     agent: AgentInterface,
     save_directory_path: Path = None,
     render: bool = False,
-) -> None:
+) -> float:
     """Renders the experiment for 100 timesteps.
 
     Parameters:
@@ -429,6 +429,7 @@ def simulate(
                 filename="simulation-pipeline-best.gif",
             )
 
+    return np.mean(rewards)
 
 def save_traces(results: Results, path: Path):
     """Convert every result in the list to a dataframe
@@ -533,6 +534,11 @@ if __name__ == "__main__":
     ).to_csv((get_dir() / "pipeline-rollouts-top03.csv").as_posix(), sep=",")
 
     shutil.copy("config.py", get_dir().as_posix())
-
-    simulate(*rollouts_k[0][:3], save_directory_path=get_dir(), render=False)
+    def fn(x):
+        return rollouts_k[0][0] == x[0]
+    result_from_best_rollout = [*filter(fn, results)][0]
+    max_averaged_rewards = np.mean(rollouts_k[0][1])
+    sim_averaged_rewards = simulate(*result_from_best_rollout[:3], save_directory_path=get_dir(), render=False)
+    np.testing.assert_almost_equal(max_averaged_rewards, sim_averaged_rewards)
+    print('max_average_reward:{0:0.4f}\tsimulation_reward:{1:0.4f}'.format(max_averaged_rewards, sim_averaged_rewards))
 
