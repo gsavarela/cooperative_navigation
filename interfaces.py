@@ -19,7 +19,61 @@ from common import snakefy
 T = TypeVar("T")
 
 
-class AgentInterface(abc.ABC):
+class SerializableInterface(abc.ABC):
+    """Interfaces for classes that can be serialized/deserialized
+
+    Serialize is to convert a class from memory and save in binary form.
+    Conversely, deserialize loads a class from disk and instanciates to memory.
+
+    Methods
+    -------
+    save_checkpoints: chkpt_dir_path: str, chkpt_sub_dir: int
+        Saves the class on a path and a checkpoint number directory
+    load_checkpoint: chkpt_dir_path: str, chkpt_sub_dir: int
+        Deserializes class from path and checkpoint number directory
+    """
+
+    def save_checkpoints(self, chkpt_dir_path: str, chkpt_sub_dir: str):
+        """Saves the class on a path and a checkpoint number directory
+
+        Parameters
+        ----------
+        chkpt_dir_path: str
+            The directory path that the checkpoint will be saved
+        chkpt_sub_dir: str
+            The sub-directory path that the checkpoint will be saved
+
+        """
+        class_name = snakefy(type(self).__name__)
+        file_path = Path(chkpt_dir_path) / str(chkpt_sub_dir) / ("%s.chkpt" % class_name)
+        file_path.parent.mkdir(exist_ok=True)
+        with file_path.open(mode="wb") as f:
+            dill.dump(self, f)
+
+    @classmethod
+    def load_checkpoint(cls, chkpt_dir_path: str, chkpt_sub_dir: str) -> T:
+        """Deserializes class from path and checkpoint number directory
+
+        Parameters
+        ----------
+        chkpt_dir_path: str
+            The directory path that the checkpoint will be saved
+        chkpt_sub_dir: str
+            The sub-directory path that the checkpoint will be saved
+
+        Returns
+        -------
+        obj: T
+            The instance of a class cls
+        """
+        class_name = snakefy(cls.__name__)
+        file_path = Path(chkpt_dir_path) / str(chkpt_sub_dir) / ("%s.chkpt" % class_name)
+        with file_path.open(mode="rb") as f:
+            new_instance = dill.load(f)
+
+        return new_instance
+
+class AgentInterface(SerializableInterface):
     """Multi agent system interface"""
 
     @property
@@ -118,56 +172,3 @@ class ActorCriticInterface(abc.ABC):
         else:
             return config.TAU
 
-class SerializableInterface(abc.ABC):
-    """Interfaces for classes that can be serialized/deserialized
-
-    Serialize is to convert a class from memory and save in binary form.
-    Conversely, deserialize loads a class from disk and instanciates to memory.
-
-    Methods
-    -------
-    save_checkpoints: chkpt_dir_path: str, chkpt_sub_dir: int
-        Saves the class on a path and a checkpoint number directory
-    load_checkpoint: chkpt_dir_path: str, chkpt_sub_dir: int
-        Deserializes class from path and checkpoint number directory
-    """
-
-    def save_checkpoints(self, chkpt_dir_path: str, chkpt_sub_dir: str):
-        """Saves the class on a path and a checkpoint number directory
-
-        Parameters
-        ----------
-        chkpt_dir_path: str
-            The directory path that the checkpoint will be saved
-        chkpt_sub_dir: str
-            The sub-directory path that the checkpoint will be saved
-
-        """
-        class_name = snakefy(type(self).__name__)
-        file_path = Path(chkpt_dir_path) / str(chkpt_sub_dir) / ("%s.chkpt" % class_name)
-        file_path.parent.mkdir(exist_ok=True)
-        with file_path.open(mode="wb") as f:
-            dill.dump(self, f)
-
-    @classmethod
-    def load_checkpoint(cls, chkpt_dir_path: str, chkpt_sub_dir: str) -> T:
-        """Deserializes class from path and checkpoint number directory
-
-        Parameters
-        ----------
-        chkpt_dir_path: str
-            The directory path that the checkpoint will be saved
-        chkpt_sub_dir: str
-            The sub-directory path that the checkpoint will be saved
-
-        Returns
-        -------
-        obj: T
-            The instance of a class cls
-        """
-        class_name = snakefy(cls.__name__)
-        file_path = Path(chkpt_dir_path) / str(chkpt_sub_dir) / ("%s.chkpt" % class_name)
-        with file_path.open(mode="rb") as f:
-            new_instance = dill.load(f)
-
-        return new_instance
