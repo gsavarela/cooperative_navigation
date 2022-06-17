@@ -27,14 +27,14 @@ import numpy as np
 import config
 from common import Array, Observation, Action, ActionSet, Rewards
 from common import softmax, make_dirs
-from interfaces import AgentInterface, ActorCriticInterface, SerializableInterface
+from interfaces import AgentInterface, ActorCriticInterface
 
 
 def clip(x):
     return np.clip(x, -1, 1)
 
 
-class ActorCriticConsensus(AgentInterface, ActorCriticInterface, SerializableInterface):
+class ActorCriticConsensus(AgentInterface, ActorCriticInterface):
     """Consensus actor critic with Linear function approximation
 
     Consensus critic and independent actors.

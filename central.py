@@ -21,10 +21,10 @@ import numpy as np
 import config
 from common import Array, Observation, Action, ActionSet, Rewards
 from common import softmax, make_dirs
-from interfaces import AgentInterface, ActorCriticInterface, SerializableInterface
+from interfaces import AgentInterface, ActorCriticInterface
 
 
-class ActorCriticCentral(AgentInterface, ActorCriticInterface, SerializableInterface):
+class ActorCriticCentral(AgentInterface, ActorCriticInterface):
     """ActorCritic with Linear function approximation
 
     Attributes:

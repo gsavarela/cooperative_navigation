@@ -22,12 +22,10 @@ import config
 from common import Array, Observation, Action, ActionSet, Rewards
 from common import softmax
 from common import softmax, make_dirs
-from interfaces import AgentInterface, ActorCriticInterface, SerializableInterface
+from interfaces import AgentInterface, ActorCriticInterface
 
 
-class ActorCriticIndependent(
-    AgentInterface, ActorCriticInterface, SerializableInterface
-):
+class ActorCriticIndependent(AgentInterface, ActorCriticInterface):
     """ActorCritic with Linear function approximation
 
     Attributes

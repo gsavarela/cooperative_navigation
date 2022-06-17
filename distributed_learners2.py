@@ -23,12 +23,10 @@ import numpy as np
 import config
 from common import Array, Observation, Action, ActionSet, Rewards
 from common import softmax, make_dirs
-from interfaces import AgentInterface, ActorCriticInterface, SerializableInterface
+from interfaces import AgentInterface, ActorCriticInterface
 
 
-class ActorCriticDistributed(
-    AgentInterface, ActorCriticInterface, SerializableInterface
-):
+class ActorCriticDistributed(AgentInterface, ActorCriticInterface):
     """Distributed actor critic with Linear function approximation
 
     Centralized critic and independent actors.
@@ -277,7 +275,7 @@ if __name__ == "__main__":
             rewards,
             "Average Rewards",
             "Evaluation Rollouts (N={0}, seed={1:02d})".format(config.N_AGENTS, seed),
-            save_directory_path=get_dir() / 'best',
+            save_directory_path=get_dir() / "best",
         )
 
     def save(data, filename) -> None:
@@ -337,11 +335,11 @@ if __name__ == "__main__":
             mus.append(agent.mu)
 
         if episode % 1000 == 0 or episode == config.EPISODES - 1:
-            env.save_checkpoints(get_dir(), 'current')
-            agent.save_checkpoints(get_dir(), 'current')
+            env.save_checkpoints(get_dir(), "current")
+            agent.save_checkpoints(get_dir(), "current")
 
-            eval_agent = ActorCriticDistributed.load_checkpoint(get_dir(), 'current')
-            eval_env = Environment.load_checkpoint(get_dir(), 'current')
+            eval_agent = ActorCriticDistributed.load_checkpoint(get_dir(), "current")
+            eval_env = Environment.load_checkpoint(get_dir(), "current")
 
             eval_rewards = 0
             first = True
@@ -364,31 +362,40 @@ if __name__ == "__main__":
                     actions = next_actions
                     eval_rewards += np.mean(next_rewards)
 
-            print('Evaluation: Current: {0:0.2f}\tBest: {1:0.2f}'.format(eval_rewards / 3200, best_rewards))
+            print(
+                "Evaluation: Current: {0:0.2f}\tBest: {1:0.2f}".format(
+                    eval_rewards / 3200, best_rewards
+                )
+            )
             if eval_rewards / 3200 > best_rewards:
-                if not (get_dir() / 'best').exists():
-                    (get_dir() / 'best').mkdir()
+                if not (get_dir() / "best").exists():
+                    (get_dir() / "best").mkdir()
 
-                if not (get_dir() / 'best' / str(episode)).exists():
-                    (get_dir() / 'best' / str(episode)).mkdir()
+                if not (get_dir() / "best" / str(episode)).exists():
+                    (get_dir() / "best" / str(episode)).mkdir()
 
-                for chkpt_path in (get_dir() / 'current').glob('*.chkpt'):
-                    if (get_dir() / 'best' / str(episode) / chkpt_path.name).exists():
-                        (get_dir() / 'best' / str(episode) / chkpt_path.name).unlink()
-                    shutil.move(chkpt_path.as_posix(), (get_dir() / 'best' / str(episode)).as_posix())
+                for chkpt_path in (get_dir() / "current").glob("*.chkpt"):
+                    if (get_dir() / "best" / str(episode) / chkpt_path.name).exists():
+                        (get_dir() / "best" / str(episode) / chkpt_path.name).unlink()
+                    shutil.move(
+                        chkpt_path.as_posix(),
+                        (get_dir() / "best" / str(episode)).as_posix(),
+                    )
 
                 if best_episode < episode:
-                    shutil.rmtree((get_dir() / 'best' / str(best_episode)).as_posix())
+                    shutil.rmtree((get_dir() / "best" / str(best_episode)).as_posix())
 
-                test_agent = ActorCriticDistributed.load_checkpoint((get_dir() / 'best'), str(episode))
+                test_agent = ActorCriticDistributed.load_checkpoint(
+                    (get_dir() / "best"), str(episode)
+                )
                 np.testing.assert_array_almost_equal(test_agent.omega, agent.omega)
                 np.testing.assert_array_almost_equal(test_agent.theta, agent.theta)
 
                 best_rewards = eval_rewards / 3200
                 best_episode = episode
 
-    if (get_dir() / 'current').exists():
-        shutil.rmtree((get_dir() / 'current').as_posix())
+    if (get_dir() / "current").exists():
+        shutil.rmtree((get_dir() / "current").as_posix())
     # Train plots and saves data.
     plot_returns(rewards, episodes)
     plot_rewards(rewards, episodes)
@@ -401,7 +408,7 @@ if __name__ == "__main__":
         (Path(get_dir() / "train-seed{0:02d}.csv".format(config.SEED)).as_posix()),
         sep=",",
     )
-        
+
     # This is a validation run.
     # Guarantees experiments are comparable.
     obs = env.reset(seed=config.SEED)
@@ -439,14 +446,16 @@ if __name__ == "__main__":
     )
 
     shutil.copy("config.py", Path(get_dir()).as_posix())
-    print('Evaluation rewards (LAST): {0:0.2f}'.format(np.sum(rewards)))
+    print("Evaluation rewards (LAST): {0:0.2f}".format(np.sum(rewards)))
 
     # This is a validation run for best policy.
     # Guarantees experiments are comparable.
     obs = env.reset(seed=config.SEED)
     print("World state: {0}".format(obs))
     np.testing.assert_almost_equal(obs, prev_world)
-    agent = ActorCriticDistributed.load_checkpoint((get_dir() / 'best'), str(best_episode))
+    agent = ActorCriticDistributed.load_checkpoint(
+        (get_dir() / "best"), str(best_episode)
+    )
     agent.reset(seed=config.SEED)
     agent.explore = False
     actions = agent.act(obs)
@@ -476,6 +485,4 @@ if __name__ == "__main__":
         dir_path=get_dir(),
         filename="simulation-best-seed{0:02d}.gif".format(seed),
     )
-    print('Evaluation rewards (BEST): {0:0.2f}'.format(np.sum(rewards)))
-
-
+    print("Evaluation rewards (BEST): {0:0.2f}".format(np.sum(rewards)))
