@@ -13,7 +13,8 @@ import pandas as pd
 import config
 from central import ActorCriticCentral
 from independent_learners import ActorCriticIndependent
-from distributed_learners2 import ActorCriticDistributed
+from distributed_learners import ActorCriticDistributedV
+from distributed_learners2 import ActorCriticDistributedQ
 from consensus_learners import ActorCriticConsensus
 from interfaces import AgentInterface
 
@@ -35,9 +36,10 @@ RolloutsTest = Tuple[RolloutTest]
 RuR = Union[Results, RolloutsTest]
 PATHS = {
     "ActorCriticCentral": "00_central",
-    "ActorCriticDistributed": "01_distributed_learners",
-    "ActorCriticIndependent": "02_independent_learners",
-    "ActorCriticConsensus": "03_consensus_learners",
+    "ActorCriticDistributedV": "01_distributed_learners_v",
+    "ActorCriticDistributedQ": "02_distributed_learners_q",
+    "ActorCriticIndependent": "03_independent_learners",
+    "ActorCriticConsensus": "04_consensus_learners",
 }
 
 

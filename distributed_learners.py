@@ -26,10 +26,10 @@ from common import softmax, make_dirs
 from interfaces import AgentInterface, ActorCriticInterface
 
 
-class ActorCriticDistributed(AgentInterface, ActorCriticInterface):
+class ActorCriticDistributedV(AgentInterface, ActorCriticInterface):
     """Distributed actor critic with Linear function approximation
 
-    Distributedized critic and independent actors.
+    Centralized critic and independent actors.
 
     Attributes:
     ----------
@@ -285,7 +285,7 @@ if __name__ == "__main__":
         seed=seed,
         central=True,
     )
-    agent = ActorCriticDistributed(
+    agent = ActorCriticDistributedV(
         n_players=config.N_AGENTS,
         n_features=env.n_features,
         action_set=env.action_set,
@@ -299,7 +299,7 @@ if __name__ == "__main__":
     )
 
     print("Fully observable: {0}".format(agent.fully_observable))
-    print("Fully observable: {0}".format(ActorCriticDistributed.fully_observable))
+    print("Fully observable: {0}".format(ActorCriticDistributedV.fully_observable))
     print(agent.label)
 
     make_dirs(get_dir())
