@@ -305,7 +305,7 @@ def rollout_test(num: int, env: Environment, agent: AgentInterface) -> RolloutTe
     rollout_env = deepcopy(env)
     rollout_agent = deepcopy(agent)
 
-    obs = rollout_env.reset(seed=env.scenario.seed + 1000)
+    obs = rollout_env.reset(seed=env.scenario.seed + config.ROLLOUT_SEED_INC)
     rollout_agent.reset()
     actions = rollout_agent.act(obs)
     res = []
@@ -394,7 +394,7 @@ def simulate(
     sim_env = deepcopy(env)
     sim_agent = deepcopy(agent)
 
-    obs = sim_env.reset(seed=env.scenario.seed + 1000)
+    obs = sim_env.reset(seed=env.scenario.seed + config.ROLLOUT_SEED_INC)
     sim_agent.reset()
     actions = sim_agent.act(obs)
     frames = []

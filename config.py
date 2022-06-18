@@ -26,42 +26,44 @@ CHECKPOINT_INTERVAL = 500
 CHECKPOINT_EVALUATIONS = 32
 # Training_cycle = train for checkpoint interval + checkpoint_evaluation
 TRAINING_CYCLES = EPISODES // CHECKPOINT_INTERVAL
+# The path that the experiments will be saved at.
+BASE_PATH = 'data/test'
+# The number of pipeline workers
+N_WORKERS = 3
 # Seed for individual runs, e.g, `python central.py`
 SEED = 1
-# The path that the experiments will be saved at.
-BASE_PATH = 'data/00_duo_w08v2'
-# The number of pipeline workers
-N_WORKERS = 15
+# Seed increment for rollouts
+ROLLOUT_SEED_INC = 1000
 # Those are the training random seeds, i.e., `.\pipeline`
 PIPELINE_SEEDS = [
     47,
     48,
     49,
-    50,
-    51,
-    52,
-    53,
-    54,
-    55,
-    56,
-    57,
-    58,
-    59,
-    60,
-    61,
-    62,
-    63,
-    64,
-    65,
-    66,
-    67,
-    68,
-    69,
-    70,
-    71,
-    72,
-    73,
-    74,
-    75,
-    76
+    # 50,
+    # 51,
+    # 52,
+    # 53,
+    # 54,
+    # 55,
+    # 56,
+    # 57,
+    # 58,
+    # 59,
+    # 60,
+    # 61,
+    # 62,
+    # 63,
+    # 64,
+    # 65,
+    # 66,
+    # 67,
+    # 68,
+    # 69,
+    # 70,
+    # 71,
+    # 72,
+    # 73,
+    # 74,
+    # 75,
+    # 76
 ]

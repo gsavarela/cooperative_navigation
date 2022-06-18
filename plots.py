@@ -5,16 +5,18 @@ import re
 from typing import List
 from time import sleep
 
-from matplotlib import animation
-import statsmodels.api as sm  # Seaborn to make fast computations.
+
 import gym
+import matplotlib.pyplot as plt
+from matplotlib import animation
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm  # Seaborn to make fast computations.
 from tqdm.auto import trange
 
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
 
 from common import Array
+import config
 from environment import Environment
 from interfaces import AgentInterface
 
@@ -472,9 +474,8 @@ def make_gifs(experiment_agent_cls: AgentInterface, experiment_dir_path: Path, e
     agent = experiment_agent_cls.load_checkpoint(chkpt_path, '')
     env = Environment.load_checkpoint(chkpt_path, '')
 
-    import ipdb; ipdb.set_trace()
     # load agent and environment
-    obs = env.reset(seed=env.scenario.seed + 1000)
+    obs = env.reset(seed=env.scenario.seed + config.ROLLOUT_SEED_INC)
     agent.reset()
     actions = agent.act(obs)
     frames = []
