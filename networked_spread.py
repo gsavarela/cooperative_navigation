@@ -158,7 +158,7 @@ class NetworkedSpreadScenario(BaseScenario):
         # random properties for landmarks
         for i, landmark in enumerate(world.landmarks):
             j = self.assignment[i]
-            color = COLORS[j] if i < 3 else (0.25, 0.25, 0.25)
+            color = COLORS[j] if j < 3 else (0.25, 0.25, 0.25)
             landmark.color = np.array(color)
 
         # set random initial states
