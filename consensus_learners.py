@@ -322,6 +322,7 @@ if __name__ == "__main__":
         scenario="networked_spread",
         seed=seed,
         central=ActorCriticConsensus.fully_observable,
+        randomize_reward_coefficients=config.RANDOMIZE_REWARD_COEFFICIENTS,
         communication=ActorCriticConsensus.communication,
         cm_type=config.CONSENSUS_MATRIX_TYPE,
         cm_max_edges=config.CONSENSUS_MAX_EDGES

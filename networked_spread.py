@@ -105,7 +105,7 @@ class NetworkedSpreadScenario(BaseScenario):
         """Random number generator"""
         return self._rng
 
-    def make_world(self, n_players: int = 1, seed: int = 0) -> World:
+    def make_world(self, n_players: int = 1, seed: int = 0, randomize_reward_coefficients: bool = False) -> World:
         """Builds the world and its entities: players and landmarks."""
         # persist decision on restart
 
@@ -131,6 +131,7 @@ class NetworkedSpreadScenario(BaseScenario):
             world.landmarks.append(landmark)
 
         self._seed = seed
+        self._randomize_reward_coefficents = randomize_reward_coefficients
         self.reset_world(world, seed=seed)
 
         return world
@@ -148,7 +149,10 @@ class NetworkedSpreadScenario(BaseScenario):
         n = len(world.players)
 
         self._assignment = self.rng.choice(n, size=n, replace=False)
-        self._coefficients = np.ones(n)
+        if self._randomize_reward_coefficents:
+            self._coefficients = self.rng.uniform(low=0, high=2, size=n)
+        else:
+            self._coefficients = np.ones(n)
 
         # random properties for players
         for i, player in enumerate(world.players):
@@ -187,12 +191,12 @@ class NetworkedSpreadScenario(BaseScenario):
         j = self.assignment[i]
         k = self.coefficients[i]
         landmark = world.landmarks[j]
-        rew = -k * np.linalg.norm(landmark.state.p_pos - player.state.p_pos)
+        rew = - np.linalg.norm(landmark.state.p_pos - player.state.p_pos)
         if player.collide:
             for a in world.players:
                 if a != player and self._is_collision(a, player):
                     rew -= 1
-        return rew
+        return k * rew
 
     def observation(self, agent: Agent, world: World) -> Observation:
         """Generates an observation for the Agent."""

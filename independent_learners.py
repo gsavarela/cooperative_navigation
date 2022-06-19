@@ -286,6 +286,7 @@ if __name__ == "__main__":
         scenario="networked_spread",
         seed=seed,
         central=ActorCriticIndependent.fully_observable,
+        randomize_reward_coefficients=config.RANDOMIZE_REWARD_COEFFICIENTS
     )
     agent = ActorCriticIndependent(
         n_players=config.N_AGENTS,

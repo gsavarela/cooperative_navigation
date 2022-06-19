@@ -138,6 +138,7 @@ def train(num: int, seed: int) -> Result:
         scenario="networked_spread",
         seed=seed,
         central=Agent.fully_observable,
+        randomize_reward_coefficients=config.RANDOMIZE_REWARD_COEFFICIENTS,
         communication=Agent.communication,
         cm_type=config.CONSENSUS_MATRIX_TYPE,
         cm_max_edges=config.CONSENSUS_MAX_EDGES

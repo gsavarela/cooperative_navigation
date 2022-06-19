@@ -288,7 +288,8 @@ if __name__ == "__main__":
         n=config.N_AGENTS,
         scenario="networked_spread",
         seed=seed,
-        central=True,
+        central=ActorCriticDistributedQ.fully_observable,
+        randomize_reward_coefficients=config.RANDOMIZE_REWARD_COEFFICIENTS
     )
     agent = ActorCriticDistributedQ(
         n_players=config.N_AGENTS,
@@ -338,7 +339,7 @@ if __name__ == "__main__":
             env.save_checkpoints(get_dir(), "current")
             agent.save_checkpoints(get_dir(), "current")
 
-            eval_agent = ActorCriticDistributed.load_checkpoint(get_dir(), "current")
+            eval_agent = ActorCriticDistributedQ.load_checkpoint(get_dir(), "current")
             eval_env = Environment.load_checkpoint(get_dir(), "current")
 
             eval_rewards = 0
@@ -385,7 +386,7 @@ if __name__ == "__main__":
                 if best_episode < episode:
                     shutil.rmtree((get_dir() / "best" / str(best_episode)).as_posix())
 
-                test_agent = ActorCriticDistributed.load_checkpoint(
+                test_agent = ActorCriticDistributedQ.load_checkpoint(
                     (get_dir() / "best"), str(episode)
                 )
                 np.testing.assert_array_almost_equal(test_agent.omega, agent.omega)
@@ -453,7 +454,7 @@ if __name__ == "__main__":
     obs = env.reset(seed=config.SEED)
     print("World state: {0}".format(obs))
     np.testing.assert_almost_equal(obs, prev_world)
-    agent = ActorCriticDistributed.load_checkpoint(
+    agent = ActorCriticDistributedQ.load_checkpoint(
         (get_dir() / "best"), str(best_episode)
     )
     agent.reset(seed=config.SEED)

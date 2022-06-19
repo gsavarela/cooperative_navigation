@@ -80,6 +80,7 @@ class Environment(Base, SerializableInterface):
         scenario: str = "simple_spread",
         seed: int = 0,
         central: bool = True,
+        randomize_reward_coefficients: bool = False,
         communication: bool = False,
         cm_type: str = "metropolis",
         cm_max_edges: int = 0,
@@ -91,7 +92,7 @@ class Environment(Base, SerializableInterface):
         else:
             self.scenario = ns.NetworkedSpreadScenario(fully_observable=central)
 
-        self.world = self.scenario.make_world(n, seed)
+        self.world = self.scenario.make_world(n, seed, randomize_reward_coefficients)
         self.action_set = action_set(n)
         self.central = central
         self.communication = communication
