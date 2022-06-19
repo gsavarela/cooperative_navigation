@@ -1,6 +1,6 @@
 """AGENT SETTINGS"""
 # The hyperparameter for the environment: Number of agents.
-N_AGENTS = 2
+N_AGENTS = 3
 # The pipeline agent
 AGENT_TYPE = 'ActorCriticCentral'
 # Alpha learning rate for the critic
@@ -12,7 +12,7 @@ TAU = 5.0
 # The weighting for the moving average
 ZETA = 0.01
 # The episodes with temperature greater than TAU
-EXPLORE_EPISODES = 3000
+EXPLORE_EPISODES = 10000
 # Applies temperature parameter from 100-TAU
 EXPLORE = True
 
@@ -26,7 +26,7 @@ RANDOMIZE_REWARD_COEFFICIENTS = True
 
 """TRAINING AND EVALUATION SETTINGS"""
 # The total number of training episodes.
-EPISODES = 7500
+EPISODES = 30000
 # Stop training at every checkpoint_interval
 CHECKPOINT_INTERVAL = 500
 # Evaluate checkpoint for checkpoint evaluations
@@ -34,7 +34,7 @@ CHECKPOINT_EVALUATIONS = 32
 # Training_cycle = train for checkpoint interval + checkpoint_evaluation
 TRAINING_CYCLES = EPISODES // CHECKPOINT_INTERVAL
 # The path that the experiments will be saved at.
-BASE_PATH = 'data/05_duo_randomized_coefficents'
+BASE_PATH = 'data/05_trio_randomized_coefficents'
 # The number of pipeline workers
 N_WORKERS = 10
 # Seed for individual runs, e.g, `python central.py`

@@ -212,14 +212,14 @@ def train_checkpoint(
     """Trains agent for CHECKPOINT_INTERVAL steps"""
     # Starts the training
     for _ in trange(config.CHECKPOINT_INTERVAL, desc="train_episodes"):
-
         # execution loop
         obs = env.reset()
         agent.reset()
         actions = agent.act(obs)
 
         rewards = []
-        for _ in trange(100, desc="train_timesteps"):
+        # for _ in trange(100, desc="train_timesteps"):
+        for _ in range(100):
             info["couplings"].append(get_couplings(actions))
 
             # step environment
@@ -272,7 +272,8 @@ def rollout_checkpoint(
         obs = env_chkpt.reset(seed=eval_seed)
         agent_chkpt.reset(seed=eval_seed)
         actions = agent_chkpt.act(obs)
-        for _ in trange(100, desc="checkpoint_timesteps"):
+        # for _ in trange(100, desc="checkpoint_timesteps"):
+        for _ in range(100):
 
             # step environment
             next_obs, next_rewards, _ = env_chkpt.step(actions)
