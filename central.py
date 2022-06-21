@@ -307,7 +307,7 @@ if __name__ == "__main__":
         obs = env.reset()
         actions = agent.act(obs)
 
-        for _ in trange(100, desc="timesteps"):
+        for _ in range(100):
             # step environment
             next_obs, next_rewards, _ = env.step(actions)
 
@@ -332,7 +332,7 @@ if __name__ == "__main__":
 
             eval_rewards = 0
             first = True
-            for _ in trange(32, desc="evaluation"):
+            for _ in range(32):
 
                 # Reseeds a copy of the original environment.
                 eval_seed = 47 if first else None
