@@ -11,8 +11,10 @@ import numpy as np
 import pandas as pd
 
 import config
-from central import ActorCriticCentral
-from independent_learners import ActorCriticIndependent
+# from central import ActorCriticCentral
+from central_torch import ActorCriticCentral
+# from independent_learners import ActorCriticIndependent
+from independent_learners_torch import ActorCriticIndependent
 from distributed_learners import ActorCriticDistributedV
 from distributed_learners2 import ActorCriticDistributedQ
 from consensus_learners import ActorCriticConsensus
@@ -35,7 +37,7 @@ RolloutTest = Tuple[int, Array, Dict]
 RolloutsTest = Tuple[RolloutTest]
 RuR = Union[Results, RolloutsTest]
 PATHS = {
-    "ActorCriticCentral": "00_central",
+    "ActorCriticCentral": "01_central_torch",
     "ActorCriticDistributedV": "01_distributed_learners_v",
     "ActorCriticDistributedQ": "02_distributed_learners_q",
     "ActorCriticIndependent": "03_independent_learners",
@@ -215,7 +217,7 @@ def train_checkpoint(
         # execution loop
         obs = env.reset()
         agent.reset()
-        actions = agent.act(obs)
+        actions, log_prob = agent.act(obs)
 
         rewards = []
         # for _ in trange(100, desc="train_timesteps"):
@@ -225,16 +227,19 @@ def train_checkpoint(
             # step environment
             next_obs, next_rewards, cwm = env.step(actions)
 
-            next_actions = agent.act(next_obs)
+            next_actions, next_log_prob = agent.act(next_obs)
 
             tr = (obs, actions, next_rewards, next_obs, next_actions)
             if agent.communication:
                 tr += (cwm,)
+            if agent.torch:
+                tr += (log_prob,)
 
             agent.update(*tr)
 
             obs = next_obs
             actions = next_actions
+            log_prob = next_log_prob
             rewards.append(np.mean(next_rewards))
             info["collisions"].append(env.n_collisions())
         res.append(np.sum(rewards))
@@ -264,21 +269,21 @@ def rollout_checkpoint(
     # Guarantees a copy is being generated.
     agent_chkpt = Agent.load_checkpoint(current_dir_path, str(seed))
     env_chkpt = Environment.load_checkpoint(current_dir_path, str(seed))
-    agent_chkpt.explore = False
+    # agent_chkpt.explore = False
 
     res = []
     for i in trange(config.CHECKPOINT_EVALUATIONS, desc="checkpoint_evaluations"):
         eval_seed = 2022 if (i == 0) else None
         obs = env_chkpt.reset(seed=eval_seed)
         agent_chkpt.reset(seed=eval_seed)
-        actions = agent_chkpt.act(obs)
+        actions, _ = agent_chkpt.act(obs)
         # for _ in trange(100, desc="checkpoint_timesteps"):
         for _ in range(100):
 
             # step environment
             next_obs, next_rewards, _ = env_chkpt.step(actions)
 
-            next_actions = agent_chkpt.act(next_obs)
+            next_actions, _ = agent_chkpt.act(next_obs)
 
             obs = next_obs
             actions = next_actions
@@ -318,7 +323,7 @@ def rollout_test(num: int, env: Environment, agent: AgentInterface) -> RolloutTe
         # step environment
         next_obs, next_rewards, _ = rollout_env.step(actions)
 
-        next_actions = rollout_agent.act(next_obs)
+        next_actions, _ = rollout_agent.act(next_obs)
 
         obs = next_obs
         actions = next_actions
