@@ -3,6 +3,7 @@
 from collections import defaultdict
 from collections.abc import Sequence
 from copy import deepcopy
+import json
 from pathlib import Path
 from typing import List, Tuple, Union, Dict
 from time import sleep
@@ -166,9 +167,11 @@ def train(num: int, seed: int) -> Result:
 
     res = []
     info = defaultdict(list)
-    best_rewards = -np.inf
+    best_returns = -np.inf
     best_episode = 0
     chkpt_episode = 0
+
+    info['chkpt_returns_mean'] = defaultdict(list)
     for _ in trange(config.TRAINING_CYCLES, desc="pipeline_cycle"):
 
         train_checkpoint(num, env, agent, res, info)
@@ -179,9 +182,9 @@ def train(num: int, seed: int) -> Result:
         agent.save_checkpoints(current_dir_path, str(seed))
 
         # Call rollouts
-        _, chkpt_rewards = rollout_checkpoint(num, current_dir_path, seed)
+        _, chkpt_returns = rollout_checkpoint(num, current_dir_path, seed)
 
-        if chkpt_rewards > best_rewards:
+        if np.mean(chkpt_returns) > np.mean(best_returns):
             chkpt_dir_path = best_dir_path / str(seed) / str(chkpt_episode)
             make_dirs(chkpt_dir_path)
 
@@ -195,9 +198,12 @@ def train(num: int, seed: int) -> Result:
                 if chkpt_best_dir_path.exists():
                     shutil.rmtree(chkpt_best_dir_path.as_posix())
 
-            best_rewards = chkpt_rewards
+            best_returns = chkpt_returns
             best_episode = chkpt_episode
             chkpt_best_dir_path = best_dir_path / str(seed) / str(best_episode)
+
+        info['chkpt_returns_mean']['steps'].append(chkpt_episode)
+        info['chkpt_returns_mean']['values'].append(np.mean(chkpt_returns))
 
     # Save best checkpoint
     # Result is a column array
@@ -264,14 +270,17 @@ def rollout_checkpoint(
     # Guarantees a copy is being generated.
     agent_chkpt = Agent.load_checkpoint(current_dir_path, str(seed))
     env_chkpt = Environment.load_checkpoint(current_dir_path, str(seed))
-    agent_chkpt.explore = False
+    agent_chkpt.explore = True
 
     res = []
     for i in trange(config.CHECKPOINT_EVALUATIONS, desc="checkpoint_evaluations"):
-        eval_seed = 2022 if (i == 0) else None
-        obs = env_chkpt.reset(seed=eval_seed)
-        agent_chkpt.reset(seed=eval_seed)
-        actions = agent_chkpt.act(obs)
+        if (i == 0):
+            eval_seed = env_chkpt.scenario.seed
+            obs = env_chkpt.reset(seed=eval_seed)
+            agent_chkpt.reset(seed=eval_seed)
+            actions = agent_chkpt.act(obs)
+
+        rewards = []
         # for _ in trange(100, desc="checkpoint_timesteps"):
         for _ in range(100):
 
@@ -282,10 +291,10 @@ def rollout_checkpoint(
 
             obs = next_obs
             actions = next_actions
-            res.append(np.mean(next_rewards))
+            rewards.append(np.mean(next_rewards))
 
-    # Result is a column array
-    res = np.mean(res)
+        # Result is a column array
+        res.append(np.sum(rewards))
     return (num, res)
 
 
@@ -465,6 +474,7 @@ if __name__ == "__main__":
     # Make preliminary directories
     make_dirs(get_dir() / "current")
     make_dirs(get_dir() / "best")
+    make_dirs(get_dir() / "metrics")
 
     # Make directory here.
     with Pool(config.N_WORKERS) as pool:
@@ -492,6 +502,13 @@ if __name__ == "__main__":
     pd.DataFrame(data=collisions, columns=config.PIPELINE_SEEDS).to_csv(
         (get_dir() / "pipeline-train-collisions.csv").as_posix(), sep=","
     )
+
+    # Saves info-dict as json
+    info_path = get_dir() / 'metrics'
+    for res in results:
+        file_path = info_path / 'output_{0:02d}.json'.format(res[0])
+        with file_path.open('w') as f:
+            json.dump(res[-1], f)
 
     results_k = top_k(results, k=3)
     train_plot(get_results(results_k))
