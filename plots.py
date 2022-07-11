@@ -1,8 +1,10 @@
 """Ploting helper moodule. """
+from collections import defaultdict
+import json
 import string
 from pathlib import Path
 import re
-from typing import List
+from typing import List, Dict
 from time import sleep
 
 
@@ -19,6 +21,7 @@ from common import Array
 import config
 from environment import Environment
 from interfaces import AgentInterface
+from utils import standard_error
 
 FIGURE_X = 6.0
 FIGURE_Y = 4.0
@@ -499,6 +502,70 @@ def make_gifs(experiment_agent_cls: AgentInterface, experiment_dir_path: Path, e
         filename="simulation-pipeline-{0}.gif".format(experiment_type),
     )
 
+def task_plot2(
+    timesteps: Dict,
+    returns: Dict,
+    std_errors: Dict,
+    suptitle: str,
+    save_directory_path: Path = None,
+) -> None:
+    """Plots Figure 11 from [1] for many algorithms
+
+    Episodic returns of all algorithms with parameter sharing in all environments
+    showing the mean and the 95% confidence interval over five different seeds.
+
+
+    Parameters
+    ----------
+    timesteps: Dict[Array]
+        Key is the algoname and value is the number of timesteps.
+    returns:  Dict[Array]
+        Key is the algoname and value is the return collected during training, e.g, rewards.
+    std_errors: Dict[Array]
+        Key is the algoname and value is the confidence interval.
+    suptitle: str,
+        The superior title
+    ylabel: str
+        The name of the metric.
+    save_directory_path: Path = None
+        Saves the reward plot on a pre-defined path.
+
+    """
+    fig = plt.figure()
+    fig.set_size_inches(FIGURE_X, FIGURE_Y)
+    normalize_y_axis = ('Foraging' in suptitle)
+    # minor_x_ticks = ('rware' in suptitle)
+
+    for algoname in timesteps:
+
+        if algoname == "Central":
+            marker, color = "^", "C0"
+        elif algoname == "Distributed":
+            marker, color = "x", "C1"
+        if algoname == "Independent":
+            marker, color = "|", "C2"
+
+        X = timesteps[algoname]
+        Y = returns[algoname]
+        err = std_errors[algoname]
+        plt.plot(X, Y, label=algoname, marker=marker, linestyle="-", c=color)
+        plt.fill_between(X, Y - err, Y + err, facecolor=color, alpha=0.25)
+
+    plt.xlabel("Environment Timesteps")
+    plt.ylabel("Episodic Return")
+    plt.legend(loc=4)
+    if normalize_y_axis:
+        plt.ylim(bottom=0, top=1.1)
+    plt.suptitle(suptitle)
+    # if minor_x_ticks:
+    #     x_ticks = [x for x in X if (x - 5_000) % 5_000_000 == 0]
+    #     plt.xticks(ticks=x_ticks)
+
+    plt.grid(which="major", axis="both")
+    _savefig(suptitle, save_directory_path)
+    _savefig(suptitle, save_directory_path)
+    plt.show()
+    plt.close(fig)
 if __name__ == "__main__":
     # Uncomment to test save_frames_as_gif
     # test_save_frames_as_gif()
@@ -508,6 +575,63 @@ if __name__ == "__main__":
     # make_gifs(ActorCriticIndependent, Path('./data/00_duo_w08/02_independent_learners/02'), 'best')
     # from central import ActorCriticCentral
     # make_gifs(ActorCriticCentral, Path('./data/00_duo_w08/00_central/02'), 'best')
-    from distributed_learners import ActorCriticDistributed
-    make_gifs(ActorCriticDistributed, Path('./data/00_duo_w08/01_distributed_learners/02'), 'best')
+    # from distributed_learners import ActorCriticDistributed
+    # make_gifs(ActorCriticDistributed, Path('./data/00_duo_w08/01_distributed_learners/02'), 'best')
+
+    # TODO: Move this to a function
+    BASE_PATH = Path("data/00_single_method/")
+    TASK_NAME = 'Single'
+    # BASE_PATH = Path("data/01_duo_method/")
+    # BASE_PATH = Path("data/02_trio_method/")
+    # TASK_NAME = 'Trio'
+
+    # BASE_PATH = Path("data/03_quad_method/")
+    # TASK_NAME = 'Quad'
+    algos_paths = BASE_PATH.rglob("*metrics")  # Only look for ia2c or maa2c
+    steps = defaultdict(list)
+    results = defaultdict(list)
+    dir_to_names = {
+        '00_central': 'Central',
+        '01_distributed_learners_v': 'Distributed',
+        '03_independent_learners': 'Independent'}
+
+    for algo_path in algos_paths:
+        algo_name = dir_to_names[algo_path.parent.parent.stem]
+        sample_size = 0
+
+        for path in algo_path.glob("output_0?.json"):
+            with path.open("r") as f:
+                data = json.load(f)
+
+            if "chkpt_returns_mean" in data:
+                _steps = data["chkpt_returns_mean"]["steps"]
+                _values = data["chkpt_returns_mean"]["values"]
+                print("source: {0} algo: {1} n_points: {2}".format(TASK_NAME, algo_name, len(_values)))
+
+                steps[(algo_name, TASK_NAME)].append(_steps)
+                results[(algo_name, TASK_NAME)].append(_values)
+                sample_size += 1
+
+        steps[(algo_name, TASK_NAME)] = np.vstack(steps[(algo_name, TASK_NAME)])
+        results[(algo_name, TASK_NAME)] = np.vstack(results[(algo_name, TASK_NAME)])
+
+    # Unique algos and tasks
+    algo_names, task_names = zip(*[*results.keys()])
+    algo_names, task_names = sorted(set(algo_names)), sorted(set(task_names))
+
+    # Makes a plot per task
+    for task_name in task_names:
+        xs = defaultdict(list)
+        mus = defaultdict(list)
+        std_errors = defaultdict(list)
+
+        for algo_name in algo_names:
+            if (algo_name, task_name) in steps:
+                # Computes average returns
+                xs[algo_name] = np.mean(steps[(algo_name, task_name)], axis=0)
+                mus[algo_name] = np.mean(results[(algo_name, task_name)], axis=0)
+                std = np.std(results[(algo_name, task_name)], axis=0)
+                std_errors[algo_name] = standard_error(std, sample_size, 0.95)
+
+        task_plot2(xs, mus, std_errors, task_name, Path.cwd() / "plots")
 
