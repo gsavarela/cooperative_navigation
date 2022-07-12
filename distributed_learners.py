@@ -146,7 +146,7 @@ class ActorCriticDistributedV(AgentInterface, ActorCriticInterface):
         ret = []
         for n in range(self.n_players):
             pi = self._PI(np.hstack(state), n)
-            ret.append(self.rng.choice(5, p=pi.flatten()))
+            ret.append(self.rng.choice(self.n_actions, p=pi.flatten()))
         return tuple(ret)
 
     def update(
