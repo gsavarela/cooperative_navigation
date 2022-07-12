@@ -150,6 +150,7 @@ class ActorCriticCentral(AgentInterface, ActorCriticInterface):
         next_rewards: Rewards,
         next_state: Observation,
         next_actions: Action,
+        done: bool = False
     ) -> None:
         """Learns from policy improvement and policy evalution.
 
@@ -176,14 +177,17 @@ class ActorCriticCentral(AgentInterface, ActorCriticInterface):
 
         # Beware for two agents.
         cur = self.action_set.index(actions)
-        self.delta = np.mean(next_rewards) - self.mu + (next_state - state) @ self.omega
-        self.delta = np.clip(self.delta, -1, 1)
+        if done:
+            delta = np.mean(next_rewards) - self.mu - state @ self.omega
+        else:
+            delta = np.mean(next_rewards) - self.mu + (next_state - state) @ self.omega
+        delta = np.clip(delta, -1, 1)
 
-        self.mu += self.zeta * self.delta
-        self.omega += self.alpha * self.delta * state
-        self.omega = np.clip(self.omega, -1, 1)
+        self.mu += self.zeta * delta
+        self.omega += self.alpha * delta * state
+        self.omega = np.clip(self.omega, -10, 10)
 
-        self.theta += self.beta * self.delta * self._psi(state, cur)
+        self.theta += self.beta * delta * self._psi(state, cur)
         self.step += 1
 
     def _psi(self, state: Array, action: int) -> Array:
